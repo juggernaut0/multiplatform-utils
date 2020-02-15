@@ -1,0 +1,9 @@
+{
+  "jest": {
+    "testRegex": "_test\\.js$"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0",
+    "text-encoding": "0.7.0"
+  }
+}

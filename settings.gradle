@@ -1,2 +1,5 @@
 rootProject.name = 'multiplatform-utils'
 
+include('ktor')
+
+project(':ktor').name = "${rootProject.name}-ktor"
