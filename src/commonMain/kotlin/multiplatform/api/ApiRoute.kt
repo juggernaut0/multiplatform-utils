@@ -112,9 +112,11 @@ private data class ConstantSegment(val seg: String) : Segment() {
     }
 }
 private data class ParamSegment(val name: String) : Segment() {
-    override fun apply(params: Map<String, Any?>): String? = params[name]?.toString()
+    override fun apply(params: Map<String, Any?>): String? = params[name]?.toString()?.urlEncode()
 
     override fun toString(): String {
         return "{$name}"
     }
 }
+
+internal expect fun String.urlEncode(): String

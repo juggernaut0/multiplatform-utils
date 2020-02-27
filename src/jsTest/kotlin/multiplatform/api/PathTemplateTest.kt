@@ -129,4 +129,15 @@ class PathTemplateTest {
         )
         assertEquals("/apar", applied)
     }
+
+    @Test
+    fun urlEscaped() {
+        val path  = pathOf(Params.serializer(), "/api/{a}/b")
+        val applied = path.applyParams(
+            Params(
+                a = "x/y"
+            )
+        )
+        assertEquals("/api/x%2Fy/b", applied)
+    }
 }

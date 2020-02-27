@@ -10,7 +10,7 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.2.0"
+    version = "0.2.1"
 
     repositories {
         mavenCentral()
@@ -75,9 +75,12 @@ node {
 }
 
 tasks {
-    withType<Kotlin2JsCompile>().forEach {
-        //it.kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlin.Experimental"
-        it.kotlinOptions.moduleKind = "umd"
+    withType<Kotlin2JsCompile> {
+        kotlinOptions {
+            moduleKind = "umd"
+            sourceMap = true
+            sourceMapEmbedSources = "always"
+        }
     }
 
     val populateNodeModules by registering(Copy::class) {
@@ -94,8 +97,7 @@ tasks {
     }
 
     val runJest by registering(NpxTask::class) {
-        dependsOn("jsTestClasses", npmInstall)
-        dependsOn(populateNodeModules)
+        dependsOn("jsTestClasses", npmInstall, populateNodeModules)
         command = "jest"
     }
 
