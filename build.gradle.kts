@@ -2,15 +2,15 @@ import com.moowork.gradle.node.npm.NpxTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.3.61"
+    kotlin("multiplatform") version "1.3.70"
     `maven-publish`
     id("com.github.node-gradle.node") version "2.2.1"
-    kotlin("plugin.serialization").version("1.3.61")
+    kotlin("plugin.serialization").version("1.3.70")
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.2.1"
+    version = "0.3.0"
 
     repositories {
         mavenCentral()
@@ -34,17 +34,19 @@ kotlin {
     jvm()
     js()
 
-    val serializationVersion = "0.14.0"
+    val serializationVersion = "0.20.0"
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-properties-common:$serializationVersion")
             }
         }
 
         val jvmMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-runtime:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serializationVersion")
             }
         }
 
@@ -57,6 +59,7 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-runtime-js:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-properties-js:$serializationVersion")
                 api("com.github.juggernaut0:async-lite:0.1.0")
             }
         }

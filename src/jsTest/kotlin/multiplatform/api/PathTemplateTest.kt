@@ -1,7 +1,7 @@
 package multiplatform.api
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.internal.UnitSerializer
+import kotlinx.serialization.builtins.UnitSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -20,7 +20,7 @@ class PathTemplateTest {
 
     @Test
     fun nothing() {
-        val path = pathOf(UnitSerializer, "/a/b/c")
+        val path = pathOf(UnitSerializer(), "/a/b/c")
         val applied = path.applyParams(Unit)
         assertEquals("/a/b/c", applied)
     }

@@ -37,5 +37,5 @@ suspend fun <P, T, R> ApiRouteWithBody<P, T, R>.call(body: T, params: P, headers
 }
 
 private val defaultJson: Json by lazy {
-    Json(JsonConfiguration.Stable.copy(strictMode = false))
+    Json(JsonConfiguration.Stable.copy(ignoreUnknownKeys = true))
 }

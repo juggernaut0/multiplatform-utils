@@ -1,5 +1,6 @@
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     `maven-publish`
 }
 
@@ -7,7 +8,7 @@ kotlin {
     jvm()
     js()
 
-    val ktorVersion = "1.2.6"
+    val ktorVersion = "1.3.1"
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -26,6 +27,7 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
+                implementation("io.ktor:ktor-server-test-host:$ktorVersion")
             }
         }
 

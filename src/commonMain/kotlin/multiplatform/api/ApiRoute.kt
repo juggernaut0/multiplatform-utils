@@ -1,11 +1,8 @@
 package multiplatform.api
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Mapper
+import kotlinx.serialization.Properties
 
-// TODO add type parameter for path template params container type
-// User Mapper to read/write to this type
-// https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/runtime_usage.md#mapper
 class ApiRoute<P, R>(val method: Method, val path: PathTemplate<P>, val responseSer: KSerializer<R>) {
     companion object {
         operator fun <P, T, R> invoke(method: Method, path: PathTemplate<P>, responseSer: KSerializer<R>, requestSer: KSerializer<T>) : ApiRouteWithBody<P, T, R> {
@@ -23,14 +20,13 @@ class ApiRouteWithBody<P, T, R>(val method: Method, val path: PathTemplate<P>, v
 enum class Method { GET, POST, PUT, DELETE }
 
 class PathTemplate<P> internal constructor(
-    val serializer: KSerializer<P>,
+    private val serializer: KSerializer<P>,
     private val path: List<Segment>,
     private val query: List<Pair<String?, Segment>>,
     private val fragment: Segment?
 ) {
     fun applyParams(params: P): String {
-        // workaround for Mapper failing on Unit: https://github.com/Kotlin/kotlinx.serialization/issues/647
-        val paramsMap = if (params == Unit) emptyMap() else Mapper.mapNullable(serializer, params)
+        val paramsMap = Properties.storeNullable(serializer, params)
         val path = "/" + path.joinToString(separator = "/") { it.apply(paramsMap) ?: "null" }
         val query = query
                 .mapNotNull { (k, v) ->
@@ -49,8 +45,26 @@ class PathTemplate<P> internal constructor(
         return path + query + fragment
     }
 
-    override fun toString(): String {
+    fun extractParams(pathParams: Map<String, String>, rawQueryParams: Map<String, List<String>>): P {
+        return Properties.load(serializer, pathParams + mapQueryParams(rawQueryParams))
+    }
+
+    fun pathString(): String {
         return "/" + path.joinToString(separator = "/")
+    }
+
+    // returns a map that can be fed into properties to populate P instance
+    // TODO handle multiple query params with the same key
+    // TODO handle keyless params
+    private fun mapQueryParams(queryStringMap: Map<String, List<String>>): Map<String, String> {
+        val res = mutableMapOf<String, String>()
+        for ((k, vs) in queryStringMap) {
+            val segment = query.find { it.first == k }?.let { it.second as? ParamSegment }
+            if (segment != null) {
+                res[segment.name] = vs.first()
+            }
+        }
+        return res
     }
 }
 

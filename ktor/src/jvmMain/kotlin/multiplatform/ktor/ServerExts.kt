@@ -14,7 +14,6 @@ import io.ktor.util.toMap
 import multiplatform.api.ApiRoute
 import multiplatform.api.ApiRouteWithBody
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.StringSerializer
 import kotlinx.serialization.json.Json
 
 object JsonSerializationFeature : ApplicationFeature<Pipeline<*, ApplicationCall>, JsonSerialization.Config, JsonSerialization> {
@@ -44,10 +43,14 @@ private suspend fun <T> ApplicationCall.respondJson(json: Json, ser: Serializati
 class CallContext<P> internal constructor(val params: P, val auth: Principal?)
 
 fun <P, R> Route.handleApi(apiRoute: ApiRoute<P, R>, handler: suspend CallContext<P>.() -> R) {
-    route(apiRoute.path.toString(), apiRoute.method.toHttpMethod()) {
+    route(apiRoute.path.pathString(), apiRoute.method.toHttpMethod()) {
         handle {
             val json = call.application.featureOrNull(JsonSerializationFeature)?.json ?: JsonSerialization.defaultJson
-            val params = unmapWithDefaults(json, apiRoute.path.serializer, call.parameters.toMap().mapValues { it.value.first() })
+            val params = try {
+                apiRoute.path.extractParams(call.parameters.toMap().mapValues { it.value.first() }, call.request.queryParameters.toMap())
+            } catch (e: SerializationException) {
+                throw BadRequestException(cause = e)
+            }
             val resp = CallContext(params, call.authentication.principal).handler()
             call.respondJson(json, apiRoute.responseSer, resp)
         }
@@ -55,20 +58,17 @@ fun <P, R> Route.handleApi(apiRoute: ApiRoute<P, R>, handler: suspend CallContex
 }
 
 fun <P, T : Any, R> Route.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, handler: suspend CallContext<P>.(T) -> R) {
-    route(apiRoute.path.toString(), apiRoute.method.toHttpMethod()) {
+    route(apiRoute.path.pathString(), apiRoute.method.toHttpMethod()) {
         handle {
             val json = call.application.featureOrNull(JsonSerializationFeature)?.json ?: JsonSerialization.defaultJson
-            val params = unmapWithDefaults(json, apiRoute.path.serializer, call.parameters.toMap().mapValues { it.value.first() })
+            val params = try {
+                apiRoute.path.extractParams(call.parameters.toMap().mapValues { it.value.first() }, call.request.queryParameters.toMap())
+            } catch (e: SerializationException) {
+                throw BadRequestException(cause = e)
+            }
             val body = call.receiveJson(json, apiRoute.requestSer)
             val resp = CallContext(params, call.authentication.principal).handler(body)
             call.respondJson(json, apiRoute.responseSer, resp)
         }
     }
-}
-
-// Hacky workaround to https://github.com/Kotlin/kotlinx.serialization/issues/79
-private fun <T> unmapWithDefaults(json: Json, serializer: KSerializer<T>, map: Map<String, String>): T {
-    // Must go all the way to string, cannot use JsonElement: https://github.com/Kotlin/kotlinx.serialization/issues/645
-    val str = json.stringify((StringSerializer to StringSerializer).map, map)
-    return json.parse(serializer, str)
 }
