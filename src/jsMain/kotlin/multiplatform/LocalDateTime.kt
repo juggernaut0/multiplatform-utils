@@ -4,6 +4,10 @@ import kotlinx.serialization.SerializationException
 import kotlin.js.Date
 
 actual class LocalDateTime(val jsDate: Date) {
+    actual fun toLocalDate(): LocalDate {
+        return LocalDate(jsDate)
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || this::class.js != other::class.js) return false
@@ -41,7 +45,7 @@ internal actual fun localDateTimeFromIsoString(s: String): LocalDateTime {
         hour = match.groupValues[4].toInt(),
         minute = match.groupValues[5].toInt(),
         second = match.groupValues[6].toInt(),
-        millisecond = match.groupValues[7].toInt()
+        millisecond = match.groupValues[7].takeUnless { it.isEmpty() }?.toInt() ?: 0
     ))
 }
 

@@ -2,7 +2,9 @@ package multiplatform
 
 import kotlinx.serialization.*
 
-expect class LocalDateTime
+expect class LocalDateTime {
+    fun toLocalDate(): LocalDate
+}
 
 internal expect fun LocalDateTime.toIsoString(): String
 internal expect fun localDateTimeFromIsoString(s: String): LocalDateTime
