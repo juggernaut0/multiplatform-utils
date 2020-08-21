@@ -6,9 +6,17 @@ plugins {
 
 kotlin {
     jvm()
-    js()
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useFirefoxHeadless()
+                }
+            }
+        }
+    }
 
-    val ktorVersion = "1.3.1"
+    val ktorVersion = "1.4.0"
     sourceSets {
         val commonMain by getting {
             dependencies {

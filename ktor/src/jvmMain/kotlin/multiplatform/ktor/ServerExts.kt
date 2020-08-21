@@ -30,14 +30,14 @@ object JsonSerializationFeature : ApplicationFeature<Pipeline<*, ApplicationCall
 
 private suspend fun <T : Any> ApplicationCall.receiveJson(json: Json, des: DeserializationStrategy<T>): T {
     try {
-        return json.parse(des, receiveText())
+        return json.decodeFromString(des, receiveText())
     } catch (e: SerializationException) {
         throw BadRequestException(cause = e)
     }
 }
 
 private suspend fun <T> ApplicationCall.respondJson(json: Json, ser: SerializationStrategy<T>, response: T) {
-    respondText(json.stringify(ser, response), ContentType.Application.Json)
+    respondText(json.encodeToString(ser, response), ContentType.Application.Json)
 }
 
 class CallContext<P> internal constructor(val params: P, val auth: Principal?)

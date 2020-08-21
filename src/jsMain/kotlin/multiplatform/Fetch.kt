@@ -4,10 +4,9 @@ import asynclite.await
 import multiplatform.api.ApiRoute
 import multiplatform.api.ApiRouteWithBody
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
-import kotlin.browser.window
+import kotlinx.browser.window
 
 class FetchException(message: String, val status: Short, val body: String) : Exception(message)
 
@@ -24,18 +23,20 @@ suspend fun fetch(method: String, path: String, body: String? = undefined, heade
 
 suspend fun <P, R> ApiRoute<P, R>.call(params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
     return fetch(method.toString(), path.applyParams(params), headers = headers)
-            .let { json.parse(responseSer, it) }
+            .let { json.decodeFromString(responseSer, it) }
 }
 
 suspend fun <P, T, R> ApiRouteWithBody<P, T, R>.call(body: T, params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
     return fetch(
         method.toString(),
         path.applyParams(params),
-        body = json.stringify(requestSer, body),
+        body = json.encodeToString(requestSer, body),
         headers = headers
-    ).let { json.parse(responseSer, it) }
+    ).let { json.decodeFromString(responseSer, it) }
 }
 
 private val defaultJson: Json by lazy {
-    Json(JsonConfiguration.Stable.copy(ignoreUnknownKeys = true))
+    Json {
+        ignoreUnknownKeys = true
+    }
 }
