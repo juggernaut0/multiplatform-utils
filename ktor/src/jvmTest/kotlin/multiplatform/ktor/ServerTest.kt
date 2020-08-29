@@ -8,7 +8,6 @@ import io.ktor.routing.routing
 import io.ktor.server.testing.setBody
 import io.ktor.server.testing.withTestApplication
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.UnitSerializer
 import kotlinx.serialization.builtins.serializer
 import multiplatform.api.ApiRoute
 import multiplatform.api.Method
@@ -22,7 +21,7 @@ class ServerTest {
         @Serializable
         data class Req(val x: String)
 
-        val route = ApiRoute(Method.POST, pathOf(UnitSerializer(), "/test"), String.serializer(), Req.serializer())
+        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/test"), String.serializer(), Req.serializer())
 
         withTestApplication({
             install(StatusPages) {

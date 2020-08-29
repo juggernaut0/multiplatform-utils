@@ -24,17 +24,17 @@ suspend fun <P, R> HttpClient.callApi(route: ApiRoute<P, R>, params: P, headers:
         method = route.method.toHttpMethod()
         this.headers.appendAll(headers)
     }
-    return json.parse(route.responseSer, resp)
+    return json.decodeFromString(route.responseSer, resp)
 }
 
 suspend fun <P, T, R> HttpClient.callApi(route: ApiRouteWithBody<P, T, R>, params: P, body: T, headers: Headers = Headers.Empty): R {
     val json = feature(JsonSerializationClientFeature)?.json ?: JsonSerialization.defaultJson
     val resp: String = request(route.path.applyParams(params)) {
         method = route.method.toHttpMethod()
-        this.body = json.stringify(route.requestSer, body)
+        this.body = json.encodeToString(route.requestSer, body)
         this.headers.appendAll(headers)
     }
-    return json.parse(route.responseSer, resp)
+    return json.decodeFromString(route.responseSer, resp)
 }
 
 object JsonSerializationClientFeature : HttpClientFeature<JsonSerialization.Config, JsonSerialization> {

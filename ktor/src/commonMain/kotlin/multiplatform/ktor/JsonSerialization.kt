@@ -1,7 +1,6 @@
 package multiplatform.ktor
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 
 class JsonSerialization(val json: Json) {
     class Config {
@@ -9,7 +8,7 @@ class JsonSerialization(val json: Json) {
     }
     companion object {
         internal val defaultJson: Json by lazy {
-            Json(JsonConfiguration.Stable.copy(ignoreUnknownKeys = true))
+            Json { ignoreUnknownKeys = true }
         }
     }
 }

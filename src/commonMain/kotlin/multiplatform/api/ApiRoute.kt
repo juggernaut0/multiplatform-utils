@@ -1,7 +1,8 @@
 package multiplatform.api
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Properties
+import kotlinx.serialization.properties.Properties
 
 class ApiRoute<P, R>(val method: Method, val path: PathTemplate<P>, val responseSer: KSerializer<R>) {
     companion object {
@@ -19,14 +20,17 @@ class ApiRouteWithBody<P, T, R>(val method: Method, val path: PathTemplate<P>, v
 
 enum class Method { GET, POST, PUT, DELETE }
 
+@OptIn(ExperimentalSerializationApi::class)
 class PathTemplate<P> internal constructor(
     private val serializer: KSerializer<P>,
     private val path: List<Segment>,
     private val query: List<Pair<String?, Segment>>,
     private val fragment: Segment?
 ) {
+
+
     fun applyParams(params: P): String {
-        val paramsMap = Properties.storeNullable(serializer, params)
+        val paramsMap = Properties.encodeToMap(serializer, params)
         val path = "/" + path.joinToString(separator = "/") { it.apply(paramsMap) ?: "null" }
         val query = query
                 .mapNotNull { (k, v) ->
@@ -46,7 +50,7 @@ class PathTemplate<P> internal constructor(
     }
 
     fun extractParams(pathParams: Map<String, String>, rawQueryParams: Map<String, List<String>>): P {
-        return Properties.load(serializer, pathParams + mapQueryParams(rawQueryParams))
+        return Properties.decodeFromMap(serializer, pathParams + mapQueryParams(rawQueryParams))
     }
 
     fun pathString(): String {
