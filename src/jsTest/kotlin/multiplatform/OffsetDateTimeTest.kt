@@ -1,18 +1,16 @@
 package multiplatform
 
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlin.js.Date
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class OffsetDateTimeTest {
+class InstantTest {
     @Test
     fun roundTrip() {
-        val d = OffsetDateTime(Date())
-        val json = Json(JsonConfiguration.Stable)
-        val jsonStr = json.stringify(OffsetDateTimeSerializer, d)
-        val newDate = json.parse(OffsetDateTimeSerializer, jsonStr)
+        val d = Clock.System.now()
+        val jsonStr = Json.Default.encodeToString(InstantSerializer, d)
+        val newDate = Json.Default.decodeFromString(InstantSerializer, jsonStr)
         assertEquals(d, newDate)
     }
 }

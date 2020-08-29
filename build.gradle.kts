@@ -52,6 +52,7 @@ kotlin {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.1.0")
             }
         }
 
