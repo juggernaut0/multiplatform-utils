@@ -1,14 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.4.0"
+    kotlin("multiplatform") version "1.4.20"
     `maven-publish`
-    kotlin("plugin.serialization").version("1.4.0")
+    kotlin("plugin.serialization").version("1.4.20")
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.4.0"
+    version = "0.5.0"
 
     repositories {
         mavenCentral()
@@ -40,7 +40,7 @@ kotlin {
         }
     }
 
-    val serializationVersion = "1.0.0-RC"
+    val serializationVersion = "1.0.1"
     sourceSets {
         all {
             languageSettings.apply {
@@ -50,7 +50,7 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serializationVersion")
             }
         }
