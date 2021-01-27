@@ -31,6 +31,8 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+                api("com.expediagroup:graphql-kotlin-schema-generator:3.7.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2")
             }
         }
 
