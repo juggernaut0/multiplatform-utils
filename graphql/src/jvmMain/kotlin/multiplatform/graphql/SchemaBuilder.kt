@@ -142,22 +142,28 @@ private fun GraphQLFieldDefinition.Builder.argumentsFromDescriptor(descriptor: S
 
 @OptIn(ExperimentalSerializationApi::class)
 private fun SerialDescriptor.toGraphQLType(): GraphQLType {
-    val kind = kind
-    val baseType = if (kind is PrimitiveKind) {
-        @Suppress("DEPRECATION") // KotlinJS code can understand the nonstandard scalars. Replace when they move
-        when (kind) {
-            PrimitiveKind.BOOLEAN -> Scalars.GraphQLBoolean
-            PrimitiveKind.BYTE -> Scalars.GraphQLByte
-            PrimitiveKind.CHAR -> Scalars.GraphQLChar
-            PrimitiveKind.SHORT -> Scalars.GraphQLShort
-            PrimitiveKind.INT -> Scalars.GraphQLInt
-            PrimitiveKind.LONG -> Scalars.GraphQLLong
-            PrimitiveKind.FLOAT -> Scalars.GraphQLFloat
-            PrimitiveKind.DOUBLE -> Scalars.GraphQLFloat
-            PrimitiveKind.STRING -> Scalars.GraphQLString
+    val baseType = when (val kind = kind) {
+        is PrimitiveKind -> {
+            @Suppress("DEPRECATION") // KotlinJS code can understand the nonstandard scalars. Replace when they move
+            when (kind) {
+                PrimitiveKind.BOOLEAN -> Scalars.GraphQLBoolean
+                PrimitiveKind.BYTE -> Scalars.GraphQLByte
+                PrimitiveKind.CHAR -> Scalars.GraphQLChar
+                PrimitiveKind.SHORT -> Scalars.GraphQLShort
+                PrimitiveKind.INT -> Scalars.GraphQLInt
+                PrimitiveKind.LONG -> Scalars.GraphQLLong
+                PrimitiveKind.FLOAT -> Scalars.GraphQLFloat
+                PrimitiveKind.DOUBLE -> Scalars.GraphQLFloat
+                PrimitiveKind.STRING -> Scalars.GraphQLString
+            }
         }
-    } else {
-        GraphQLTypeReference(serialName.split('.').last())
+        is StructureKind.LIST -> {
+            val inner = getElementDescriptor(0).toGraphQLType()
+            GraphQLList(inner)
+        }
+        else -> {
+            GraphQLTypeReference(serialName.split('.').last())
+        }
     }
     return baseType.let { if (isNullable) it else GraphQLNonNull(it) }
 }

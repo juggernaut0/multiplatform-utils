@@ -3,6 +3,8 @@ package multiplatform.graphql
 import graphql.schema.idl.SchemaPrinter
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -51,6 +53,46 @@ class SchemaGeneratorTest {
         }
 
         assertEquals("{\"a\":\"a\",\"b\":{\"c\":\"c\",\"d\":1,\"e\":3},\"f\":4}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
+    fun lists() {
+        val schema = schema {
+            query {
+                field("xs", ListSerializer(Int.serializer())) {
+                    listOf(1, 2, 3)
+                }
+            }
+        }
+
+        println(SchemaPrinter().print(schema))
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{xs}"))
+        }
+
+        assertEquals("{\"xs\":[1,2,3]}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
+    fun nullable() {
+        val schema = schema {
+            query {
+                field("nurupo", Int.serializer().nullable) {
+                    null
+                }
+            }
+        }
+
+        println(SchemaPrinter().print(schema))
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{nurupo}"))
+        }
+
+        assertEquals("{\"nurupo\":null}", response.data.toString())
         assertTrue(response.errors.isEmpty())
     }
 }
