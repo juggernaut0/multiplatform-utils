@@ -12,7 +12,7 @@ class BuildQueryTest {
 
         val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
 
-        assertEquals("query{s i b}", query)
+        assertEquals("{s i b}", query)
     }
 
     @Test
@@ -24,7 +24,7 @@ class BuildQueryTest {
 
         val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
 
-        assertEquals("query{s c{s}}", query)
+        assertEquals("{s c{s}}", query)
     }
 
     @Test
@@ -34,7 +34,7 @@ class BuildQueryTest {
 
         val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
 
-        assertEquals("query{s ns}", query)
+        assertEquals("{s ns}", query)
     }
 
     @Test
@@ -46,7 +46,7 @@ class BuildQueryTest {
 
         val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
 
-        assertEquals("query{s cs{s}}", query)
+        assertEquals("{s cs{s}}", query)
     }
 
     @Test
@@ -56,7 +56,7 @@ class BuildQueryTest {
 
         val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
 
-        assertEquals("query{ns(even:true)}", query)
+        assertEquals("{ns(even:true)}", query)
     }
 
     @Test

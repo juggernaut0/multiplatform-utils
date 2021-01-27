@@ -11,9 +11,9 @@ internal object GraphQLQueryBuilder {
         require(descriptor.kind == StructureKind.CLASS) // TODO allow other kinds as root?
 
         return buildString {
-            append("query")
             val vars = descriptor.annotations.filterIsInstance<GraphQLVariable>()
             if (vars.isNotEmpty()) {
+                append("query")
                 append(vars.joinToString(separator = ",", prefix = "(", postfix = ")") {
                     "\$${it.name}:${it.type}${if (it.default.isNotBlank()) "=${it.default}" else ""}"
                 })

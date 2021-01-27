@@ -144,6 +144,7 @@ private fun GraphQLFieldDefinition.Builder.argumentsFromDescriptor(descriptor: S
 private fun SerialDescriptor.toGraphQLType(): GraphQLType {
     val kind = kind
     val baseType = if (kind is PrimitiveKind) {
+        @Suppress("DEPRECATION") // KotlinJS code can understand the nonstandard scalars. Replace when they move
         when (kind) {
             PrimitiveKind.BOOLEAN -> Scalars.GraphQLBoolean
             PrimitiveKind.BYTE -> Scalars.GraphQLByte

@@ -1,7 +1,6 @@
 package multiplatform.graphql
 
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
 import graphql.schema.DataFetchingEnvironment
@@ -11,13 +10,13 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.serialization.json.*
 
-fun graphQL(schema: GraphQLSchema) = GraphQL.newGraphQL(schema).queryExecutionStrategy(AsyncExecutionStrategy()).build()
+fun graphQL(schema: GraphQLSchema): GraphQL = GraphQL.newGraphQL(schema).queryExecutionStrategy(AsyncExecutionStrategy()).build()
 
 class GraphQLCoroutineContext(val coroutineScope: CoroutineScope)
 val DataFetchingEnvironment.coroutineScope: CoroutineScope get() = getContext<GraphQLCoroutineContext>().coroutineScope
 
-suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): ExecutionResult {
-    return coroutineScope {
+suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLResponse {
+    val result = coroutineScope {
         executeAsync(
             ExecutionInput
                 .newExecutionInput(graphQLRequest.query)
@@ -26,10 +25,14 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): ExecutionRes
                 .context(GraphQLCoroutineContext(this))
         ).await()
     }
-}
-
-fun ExecutionResult.toSpecificationJson(): JsonElement {
-    return toJson(toSpecification())
+    val data = result.getData<Map<String, Any?>>()?.let { toJson(it) }
+    val errors = result.errors.map {
+        GraphQLError( // TODO path
+            message = it.message,
+            locations = it.locations.map { loc -> Location(line = loc.line, column = loc.column) },
+        )
+    }
+    return GraphQLResponse(data = data, errors = errors)
 }
 
 @Suppress("UNCHECKED_CAST")
