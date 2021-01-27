@@ -6,7 +6,6 @@ import kotlinx.coroutines.future.future
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.properties.Properties
 
 inline fun schema(builder: SchemaBuilder.() -> Unit): GraphQLSchema = SchemaBuilder().also(builder).build()
@@ -90,7 +89,7 @@ class FieldBuilder<T>(private val parentSer: KSerializer<T>, private val schemaB
         val dataFetcher = DataFetcher {
             val parent: T = it.getSource()
             var field: Any? = null
-            val extractorEncoder = FieldExtractorEncoder(name) { v -> field = v } }
+            val extractorEncoder = FieldExtractorEncoder(name) { v -> field = v }
             parentSer.serialize(extractorEncoder, parent)
             field
         }
