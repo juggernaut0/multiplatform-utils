@@ -1,8 +1,10 @@
 package multiplatform.graphql
 
+import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
@@ -46,7 +48,7 @@ class SchemaGeneratorTest {
             }
         }
 
-        println(SchemaPrinter().print(schema))
+        printSchema(schema)
 
         val response = runBlocking {
             graphQL(schema).executeSuspend(GraphQLRequest("{a b{c d e(x: 1)} f(x: 2)}"))
@@ -66,7 +68,7 @@ class SchemaGeneratorTest {
             }
         }
 
-        println(SchemaPrinter().print(schema))
+        printSchema(schema)
 
         val response = runBlocking {
             graphQL(schema).executeSuspend(GraphQLRequest("{xs}"))
@@ -86,7 +88,7 @@ class SchemaGeneratorTest {
             }
         }
 
-        println(SchemaPrinter().print(schema))
+        printSchema(schema)
 
         val response = runBlocking {
             graphQL(schema).executeSuspend(GraphQLRequest("{nurupo}"))
@@ -94,5 +96,45 @@ class SchemaGeneratorTest {
 
         assertEquals("{\"nurupo\":null}", response.data.toString())
         assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
+    fun context() {
+        @Serializable
+        class Nested {
+            @Transient // will not show up in schema
+            var context: Int = 0
+        }
+
+        val schema = schema {
+            query {
+                field("a", ListSerializer(Nested.serializer())) {
+                    listOf(
+                        Nested().apply { context = 1 },
+                        Nested().apply { context = 2 },
+                        Nested().apply { context = 3 },
+                    )
+                }
+            }
+
+            type(Nested.serializer()) {
+                field("x", Int.serializer()) {
+                    context * 2
+                }
+            }
+        }
+
+        printSchema(schema)
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{a{x}}"))
+        }
+
+        assertEquals("{\"a\":[{\"x\":2},{\"x\":4},{\"x\":6}]}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    private fun printSchema(schema: GraphQLSchema) {
+        println(SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false)).print(schema))
     }
 }

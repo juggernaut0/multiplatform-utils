@@ -25,11 +25,12 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLRespo
                 .context(GraphQLCoroutineContext(this))
         ).await()
     }
-    val data = result.getData<Map<String, Any?>>()?.let { toJson(it) }
-    val errors = result.errors.map {
-        GraphQLError( // TODO path
-            message = it.message,
-            locations = it.locations.map { loc -> Location(line = loc.line, column = loc.column) },
+    val data = result.getData<Any?>()?.let { toJson(it) }
+    val errors = result.errors.map { error ->
+        GraphQLError(
+            message = error.message,
+            path = error.path.map { toJson(it) },
+            locations = error.locations.map { loc -> Location(line = loc.line, column = loc.column) },
         )
     }
     return GraphQLResponse(data = data, errors = errors)

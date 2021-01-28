@@ -67,7 +67,7 @@ class QueryBuilder(private val schemaBuilder: SchemaBuilder) {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-class FieldBuilder<T>(private val parentSer: KSerializer<T>, private val schemaBuilder: SchemaBuilder) {
+class FieldBuilder<T>(parentSer: KSerializer<T>, private val schemaBuilder: SchemaBuilder) {
     private val myName: String
     private val builder = GraphQLObjectType.newObject()
 
@@ -86,14 +86,6 @@ class FieldBuilder<T>(private val parentSer: KSerializer<T>, private val schemaB
         val builder = GraphQLFieldDefinition.newFieldDefinition()
         builder.name(name)
         builder.type(descriptor.toGraphQLOutputType())
-        val dataFetcher = DataFetcher {
-            val parent: T = it.getSource()
-            var field: Any? = null
-            val extractorEncoder = FieldExtractorEncoder(name) { v -> field = v }
-            parentSer.serialize(extractorEncoder, parent)
-            field
-        }
-        schemaBuilder.codeRegistry.dataFetcher(FieldCoordinates.coordinates(myName, name), dataFetcher)
         return builder.build()
     }
 
