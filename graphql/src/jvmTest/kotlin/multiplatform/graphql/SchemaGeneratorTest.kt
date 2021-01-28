@@ -134,6 +134,29 @@ class SchemaGeneratorTest {
         assertTrue(response.errors.isEmpty())
     }
 
+    @Test
+    fun variables() {
+        @Serializable
+        class AParams(val x: Int)
+
+        val schema = schema {
+            query {
+                field("a", Int.serializer(), AParams.serializer()) {
+                    it.x * 2
+                }
+            }
+        }
+
+        printSchema(schema)
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("query(\$x:Int!){a(x:\$x)}", variables = mapOf("x" to "2")))
+        }
+
+        assertEquals("{\"a\":4}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
     private fun printSchema(schema: GraphQLSchema) {
         println(SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false)).print(schema))
     }

@@ -29,8 +29,8 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLRespo
     val errors = result.errors.map { error ->
         GraphQLError(
             message = error.message,
-            path = error.path.map { toJson(it) },
-            locations = error.locations.map { loc -> Location(line = loc.line, column = loc.column) },
+            path = error.path?.map { toJson(it) },
+            locations = error.locations.orEmpty().map { loc -> Location(line = loc.line, column = loc.column) },
         )
     }
     return GraphQLResponse(data = data, errors = errors)
