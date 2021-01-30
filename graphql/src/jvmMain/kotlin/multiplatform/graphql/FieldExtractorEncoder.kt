@@ -47,10 +47,12 @@ class FieldExtractorEncoder(private val name: String, private val target: (Any?)
 
     private fun cantExtract(): Nothing = throw SerializationException("Can only extract fields from structures")
 
-    private object NullEncoder : AbstractEncoder() {
-        override val serializersModule: SerializersModule
-            get() = SerializersModule {  }
+}
 
-        override fun encodeValue(value: Any) {}
-    }
+@OptIn(ExperimentalSerializationApi::class)
+object NullEncoder : AbstractEncoder() {
+    override val serializersModule: SerializersModule
+        get() = SerializersModule {  }
+
+    override fun encodeValue(value: Any) {}
 }

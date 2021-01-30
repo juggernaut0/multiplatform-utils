@@ -3,11 +3,14 @@ package multiplatform.graphql
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -134,6 +137,29 @@ class SchemaGeneratorTest {
         assertTrue(response.errors.isEmpty())
     }
 
+    private class TestContext(val value: Int) : CoroutineContext.Element {
+        override val key: CoroutineContext.Key<TestContext> get() = Key
+        object Key : CoroutineContext.Key<TestContext>
+    }
+
+    @Test
+    fun coroutineContext() {
+        val schema = schema {
+            query {
+                field("a", Int.serializer()) {
+                    coroutineContext[TestContext.Key]!!.value
+                }
+            }
+        }
+
+        val response = runBlocking(context = TestContext(42)) {
+            graphQL(schema).executeSuspend(GraphQLRequest("{a}"))
+        }
+
+        assertEquals("{\"a\":42}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
     @Test
     fun variables() {
         @Serializable
@@ -154,6 +180,39 @@ class SchemaGeneratorTest {
         }
 
         assertEquals("{\"a\":4}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Serializable
+    private sealed class Foo {
+        @Serializable
+        class Bar(override val foo: String, val bar: String): Foo()
+        @Serializable
+        class Baz(override val foo: String, val baz: String): Foo()
+        abstract val foo: String
+    }
+
+    @Test
+    fun interfaces() {
+        val schema = schema {
+            query {
+                field("foo", Foo.serializer()) {
+                    Foo.Bar("bar's foo", "bar")
+                }
+            }
+
+            `interface`(Foo.serializer())
+        }
+
+        printSchema(schema)
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{foo{foo ... on Bar {bar}}}"))
+        }
+
+        response.errors.forEach { println(it) }
+
+        assertEquals("{\"foo\":{\"foo\":\"bar's foo\",\"bar\":\"bar\"}}", response.data.toString())
         assertTrue(response.errors.isEmpty())
     }
 

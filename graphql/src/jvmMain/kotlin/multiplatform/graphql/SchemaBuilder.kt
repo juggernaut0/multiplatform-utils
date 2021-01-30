@@ -3,8 +3,7 @@ package multiplatform.graphql
 import graphql.Scalars
 import graphql.schema.*
 import kotlinx.coroutines.future.future
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.properties.Properties
 
@@ -19,8 +18,67 @@ class SchemaBuilder {
         QueryBuilder(this).also(queryFields).build().also { builder.query(it) }
     }
 
+    fun type(ser: KSerializer<*>) {
+        FieldBuilder(ser, this).build().also { addType(it) }
+    }
+
     inline fun <T> type(ser: KSerializer<T>, extraFields: FieldBuilder<T>.() -> Unit) {
         FieldBuilder(ser, this).also(extraFields).build().also { addType(it) }
+    }
+
+    /**
+     * kotlinx.serialization does not expose base class fields so you must specify them explicitly. The types will be
+     * inferred from the subclasses. If no common fields are specified, they will be inferred from the subclasses.
+     */
+    @OptIn(InternalSerializationApi::class)
+    fun <T: Any> `interface`(ser: KSerializer<T>, vararg commonFields: String) {
+        val sealedSer = ser as? SealedClassSerializer<T> ?: error("Must use a sealed class to create an interface")
+        val name = ser.descriptor.serialName.split('.').last()
+        val baseDesc = ser.descriptor.getElementDescriptor(1)
+        check(baseDesc.elementsCount > 0) { "Must have at least one implementation type for $name" }
+
+        val ifTypeBuilder = GraphQLInterfaceType.newInterface().name(name)
+
+        val ifFields = if (commonFields.isEmpty()) {
+            // infer common fields from subtypes
+            (0 until baseDesc.elementsCount)
+                .map { baseDesc.getElementDescriptor(it) }
+                .map { desc ->
+                    (0 until desc.elementsCount).map { i -> desc.getElementName(i) to desc.getElementDescriptor(i) }
+                }
+                .reduce { a, b -> a.filter { it in b } }
+        } else {
+            val desc = baseDesc.getElementDescriptor(0)
+            commonFields.map { fieldName ->
+                val i = desc.getElementIndex(fieldName)
+                    .takeIf { it >= 0 } ?: error("$fieldName is not a field in $name")
+                fieldName to desc.getElementDescriptor(i)
+            }
+        }
+        for ((fieldName, desc) in ifFields) {
+            val field = GraphQLFieldDefinition.newFieldDefinition().name(fieldName).type(desc.toGraphQLOutputType())
+            ifTypeBuilder.field(field)
+        }
+
+        val ifType = ifTypeBuilder.build()
+            .also { addType(it) }
+
+        val subtypes = mutableMapOf<SerialDescriptor, GraphQLObjectType>()
+        for (i in 0 until baseDesc.elementsCount) {
+            val elemDescriptor = baseDesc.getElementDescriptor(i)
+            FieldBuilder<T>(elemDescriptor, this)
+                .apply { builder.withInterface(ifType) }
+                .build()
+                .also { subtypes[elemDescriptor] = it }
+                .also { addType(it) }
+        }
+        val typeResolver = TypeResolver { env ->
+            val obj: T = env.getObject()
+            val actualSer = sealedSer.findPolymorphicSerializerOrNull(NullEncoder, obj)
+                ?: error("Could not find actual serializer for $obj")
+            subtypes[actualSer.descriptor]
+        }
+        codeRegistry.typeResolver(ifType, typeResolver)
     }
 
     fun addType(objectType: GraphQLType) {
@@ -67,13 +125,13 @@ class QueryBuilder(private val schemaBuilder: SchemaBuilder) {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-class FieldBuilder<T>(parentSer: KSerializer<T>, private val schemaBuilder: SchemaBuilder) {
-    private val myName: String
-    private val builder = GraphQLObjectType.newObject()
+class FieldBuilder<T>(descriptor: SerialDescriptor, private val schemaBuilder: SchemaBuilder) {
+    private val myName: String = descriptor.serialName.split('.').last()
+    internal val builder = GraphQLObjectType.newObject()
+
+    constructor(parentSer: KSerializer<T>, schemaBuilder: SchemaBuilder) : this(parentSer.descriptor, schemaBuilder)
 
     init {
-        val descriptor = parentSer.descriptor
-        myName = descriptor.serialName.split('.').last()
         builder.name(myName)
         for (i in 0 until descriptor.elementsCount) {
             val name = descriptor.getElementName(i)
@@ -157,7 +215,7 @@ private fun SerialDescriptor.toGraphQLType(): GraphQLType {
             GraphQLTypeReference(serialName.split('.').last())
         }
     }
-    return baseType.let { if (isNullable) it else GraphQLNonNull(it) }
+    return baseType.let { if (isNullable || it is GraphQLNonNull) it else GraphQLNonNull(it) }
 }
 
 // TODO figure out where these break
