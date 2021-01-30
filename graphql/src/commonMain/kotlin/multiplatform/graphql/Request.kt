@@ -43,7 +43,7 @@ suspend fun <R> ApiClient.callGraphQL(
     variables: Map<String, Any> = emptyMap()
 ): R {
     val query = queryCache.get(ser.descriptor) { GraphQLQueryBuilder.buildQuery(it) }
-    val req = GraphQLRequest(query = query, operationName = operationName, variables = variables.mapValues { it.toString() })
+    val req = GraphQLRequest(query = query, operationName = operationName, variables = variables.mapValues { it.value.toString() })
     val resp = callApi(apiRoute, Unit, req)
     if (resp.errors.isNotEmpty()) {
         throw GraphQLException(resp.errors)

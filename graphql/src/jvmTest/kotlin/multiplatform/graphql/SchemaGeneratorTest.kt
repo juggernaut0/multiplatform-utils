@@ -2,6 +2,7 @@ package multiplatform.graphql
 
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
@@ -11,6 +12,7 @@ import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -213,6 +215,36 @@ class SchemaGeneratorTest {
         response.errors.forEach { println(it) }
 
         assertEquals("{\"foo\":{\"foo\":\"bar's foo\",\"bar\":\"bar\"}}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
+    @Ignore
+    fun parallel() {
+        val schema = schema {
+            query {
+                field("a", Int.serializer()) {
+                    println("starting a")
+                    delay(100)
+                    println("returning a")
+                    1
+                }
+                field("b", Int.serializer()) {
+                    println("starting b")
+                    delay(100)
+                    println("returning b")
+                    2
+                }
+            }
+        }
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{a b}"))
+        }
+
+        response.errors.forEach { println(it) }
+
+        assertEquals("{\"a\":1,\"b\":2}", response.data.toString())
         assertTrue(response.errors.isEmpty())
     }
 

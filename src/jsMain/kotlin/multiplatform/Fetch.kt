@@ -13,7 +13,7 @@ import org.w3c.fetch.RequestInit
 class FetchException(message: String, val status: Short, val body: String) : Exception(message)
 
 suspend fun fetch(method: String, path: String, body: String? = undefined, headers: Headers? = undefined): String {
-    val resp = window.fetch(path, RequestInit(method = method, body = body, headers = headers)).await()
+    val resp = window.fetch(path, RequestInit(method = method, body = body, headers = headers.nullToUndefined())).await()
     val text = resp.text().await()
     if (!resp.ok) throw FetchException(
         "${resp.status} ${resp.statusText}",
@@ -46,3 +46,5 @@ private val defaultJson: Json by lazy {
         ignoreUnknownKeys = true
     }
 }
+
+private fun Any?.nullToUndefined(): Any? = this ?: undefined
