@@ -212,7 +212,7 @@ private fun SerialDescriptor.toGraphQLType(): GraphQLType {
             GraphQLList(inner)
         }
         else -> {
-            GraphQLTypeReference(serialName.split('.').last())
+            GraphQLTypeReference(serialName.split('.').last().trimEnd('?'))
         }
     }
     return baseType.let { if (isNullable || it is GraphQLNonNull) it else GraphQLNonNull(it) }

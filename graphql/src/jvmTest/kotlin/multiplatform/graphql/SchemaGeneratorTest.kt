@@ -84,7 +84,7 @@ class SchemaGeneratorTest {
     }
 
     @Test
-    fun nullable() {
+    fun nullablePrimitive() {
         val schema = schema {
             query {
                 field("nurupo", Int.serializer().nullable) {
@@ -100,6 +100,33 @@ class SchemaGeneratorTest {
         }
 
         assertEquals("{\"nurupo\":null}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
+    fun nullableClass() {
+        @Serializable
+        class Foo(val a: Int)
+
+        val schema = schema {
+            query {
+                field("foo", Foo.serializer().nullable) {
+                    null
+                }
+            }
+
+            type(Foo.serializer())
+        }
+
+        printSchema(schema)
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{foo{a}}"))
+        }
+
+        response.errors.forEach { println(it) }
+
+        assertEquals("{\"foo\":null}", response.data.toString())
         assertTrue(response.errors.isEmpty())
     }
 
