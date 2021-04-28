@@ -111,7 +111,7 @@ internal sealed class Segment {
     abstract fun apply(params: Map<String, Any?>): String?
 
     companion object {
-        private val paramMatcher = Regex("\\{(\\w+)}")
+        private val paramMatcher = Regex("\\{(\\w+)\\}")
         fun of(str: String): Segment {
             val match = paramMatcher.matchEntire(str)
             return if (match != null) {

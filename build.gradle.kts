@@ -1,14 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.4.20"
+    kotlin("multiplatform") version "1.5.0"
     `maven-publish`
-    kotlin("plugin.serialization").version("1.4.20")
+    kotlin("plugin.serialization").version("1.5.0")
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.5.0"
+    version = "0.6.0"
 
     repositories {
         mavenCentral()
@@ -40,7 +40,7 @@ kotlin {
         }
     }
 
-    val serializationVersion = "1.0.1"
+    val serializationVersion = "1.2.0"
     sourceSets {
         all {
             languageSettings.apply {
