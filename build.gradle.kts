@@ -8,7 +8,7 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.6.0"
+    version = "0.6.1"
 
     repositories {
         mavenCentral()
@@ -40,7 +40,7 @@ kotlin {
         }
     }
 
-    val serializationVersion = "1.2.0"
+    val serializationVersion = "1.2.1"
     sourceSets {
         all {
             languageSettings.apply {
