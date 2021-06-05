@@ -32,10 +32,10 @@ class SchemaBuilder {
      */
     @OptIn(InternalSerializationApi::class)
     fun <T: Any> `interface`(ser: KSerializer<T>, vararg commonFields: String) {
-        val sealedSer = ser as? SealedClassSerializer<T> ?: error("Must use a sealed class to create an interface")
         val name = ser.descriptor.serialName.split('.').last()
+        require(ser is SealedClassSerializer<T>) { "$name must be a sealed class in order to create an interface" }
         val baseDesc = ser.descriptor.getElementDescriptor(1)
-        check(baseDesc.elementsCount > 0) { "Must have at least one implementation type for $name" }
+        require(baseDesc.elementsCount > 0) { "$name must have at least one implementation in order to create an interface" }
 
         val ifTypeBuilder = GraphQLInterfaceType.newInterface().name(name)
 
@@ -74,7 +74,7 @@ class SchemaBuilder {
         }
         val typeResolver = TypeResolver { env ->
             val obj: T = env.getObject()
-            val actualSer = sealedSer.findPolymorphicSerializerOrNull(NullEncoder, obj)
+            val actualSer = ser.findPolymorphicSerializerOrNull(NullEncoder, obj)
                 ?: error("Could not find actual serializer for $obj")
             subtypes[actualSer.descriptor]
         }

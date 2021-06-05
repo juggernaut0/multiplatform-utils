@@ -44,6 +44,7 @@ class FieldExtractorEncoder(private val name: String, private val target: (Any?)
     override fun encodeNull() = cantExtract()
     override fun encodeShort(value: Short) = cantExtract()
     override fun encodeString(value: String) = cantExtract()
+    override fun encodeInline(inlineDescriptor: SerialDescriptor) = cantExtract()
 
     private fun cantExtract(): Nothing = throw SerializationException("Can only extract fields from structures")
 

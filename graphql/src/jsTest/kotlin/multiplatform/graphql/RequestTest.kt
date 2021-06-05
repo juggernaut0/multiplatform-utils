@@ -72,7 +72,6 @@ class RequestTest {
         class Query(val greeting: String, val number: Int)
 
         val exc = assertFails { client.callGraphQL(route, Query.serializer()) }
-        console.log(exc)
         exc as GraphQLException
         assertEquals(1, exc.errors.size)
         assertEquals("test error", exc.errors[0].message)

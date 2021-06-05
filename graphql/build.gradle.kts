@@ -5,7 +5,12 @@ plugins {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        // TODO required for tests that use local serializable classes, can remove in kxs 1.5.30
+        compilations.named("test") {
+            kotlinOptions.useOldBackend = true
+        }
+    }
     js {
         browser {
             testTask {
@@ -32,7 +37,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 api("com.graphql-java:graphql-java:2020-12-21T21-14-06-a12f84b")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.5.0")
             }
         }
 
