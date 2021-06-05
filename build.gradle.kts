@@ -1,14 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.5.0"
+    kotlin("multiplatform") version "1.5.10"
     `maven-publish`
-    kotlin("plugin.serialization").version("1.5.0")
+    kotlin("plugin.serialization").version("1.5.10")
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.6.1-graphql-SNAPSHOT"
+    version = "0.6.2-graphql-SNAPSHOT"
 
     repositories {
         mavenCentral()
@@ -63,7 +63,7 @@ kotlin {
 
         val jsMain by getting {
             dependencies {
-                api("com.github.juggernaut0:async-lite:0.1.0")
+                api("com.github.juggernaut0:async-lite:0.2.0")
             }
         }
 
