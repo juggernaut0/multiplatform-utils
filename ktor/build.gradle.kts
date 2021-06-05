@@ -5,11 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions.useOldBackend = true // TODO test with IR backend later
-        }
-    }
+    jvm()
     js {
         browser {
             testTask {
@@ -20,7 +16,7 @@ kotlin {
         }
     }
 
-    val ktorVersion = "1.5.3"
+    val ktorVersion = "1.6.0"
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -46,10 +42,6 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 api("io.ktor:ktor-client-js:$ktorVersion")
-                // TODO webpack doesn't polyfill these anymore, maybe can be removed when ktor updates
-                implementation(npm("crypto-browserify", "3.12"))
-                implementation(npm("stream-browserify", "3.0"))
-                implementation(npm("buffer", "6.0"))
             }
         }
 
