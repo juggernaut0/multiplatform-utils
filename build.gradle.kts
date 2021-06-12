@@ -8,11 +8,10 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.6.2"
+    version = "0.6.3"
 
     repositories {
         mavenCentral()
-        maven { url = uri("https://kotlin.bintray.com/kotlinx") }
         maven { url = uri("https://juggernaut0.github.io/m2/repository") }
     }
 

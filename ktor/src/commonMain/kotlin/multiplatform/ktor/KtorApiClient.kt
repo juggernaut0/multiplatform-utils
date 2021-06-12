@@ -10,11 +10,13 @@ import multiplatform.api.ApiRouteWithBody
 import multiplatform.api.Headers
 
 class KtorApiClient(httpClient: HttpClient = HttpClient(), json: Json? = null) : ApiClient {
-    private val httpClient = httpClient.also {
-        if (it.feature(JsonSerializationClientFeature) != null) {
+    private val httpClient = httpClient.let {
+        if (it.feature(JsonSerializationClientFeature) == null) {
             it.config {
                 install(JsonSerializationClientFeature) { this.json = json }
             }
+        } else {
+            it
         }
     }
 
@@ -33,7 +35,7 @@ class KtorApiClient(httpClient: HttpClient = HttpClient(), json: Json? = null) :
         body: T,
         headers: Headers?
     ): R {
-        val json = httpClient.feature(JsonSerializationClientFeature)?.json ?: JsonSerialization.defaultJson
+        val json = httpClient.feature(JsonSerializationClientFeature)!!.json
         val resp: String = httpClient.request(apiRoute.path.applyParams(params)) {
             method = apiRoute.method.toHttpMethod()
             this.body = json.encodeToString(apiRoute.requestSer, body)
