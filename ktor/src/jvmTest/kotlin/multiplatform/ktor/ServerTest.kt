@@ -16,11 +16,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ServerTest {
+    // TODO move this back into test method once kxs supports local class serialization (kotlin 1.5.30)
+    @Serializable
+    data class Req(val x: String)
+
     @Test
     fun testServerExts() {
-        @Serializable
-        data class Req(val x: String)
-
         val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/test"), String.serializer(), Req.serializer())
 
         withTestApplication({
@@ -29,7 +30,7 @@ class ServerTest {
             }
             routing {
                 handleApi(route) {
-                    it.x.toUpperCase()
+                    it.x.uppercase()
                 }
             }
         }) {
@@ -56,11 +57,12 @@ class ServerTest {
         }
     }
 
+    // TODO move this back into test method once kxs supports local class serialization (kotlin 1.5.30)
+    @Serializable
+    data class Params(val path: String, val query: String)
+
     @Test
     fun params() {
-        @Serializable
-        data class Params(val path: String, val query: String)
-
         val route = ApiRoute(Method.GET, pathOf(Params.serializer(), "/{path}?q={query}"), String.serializer())
 
         withTestApplication({

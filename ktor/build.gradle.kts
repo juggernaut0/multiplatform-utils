@@ -16,7 +16,7 @@ kotlin {
         }
     }
 
-    val ktorVersion = "1.4.0"
+    val ktorVersion = "1.6.0"
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -36,6 +36,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-junit"))
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("io.ktor:ktor-client-mock:$ktorVersion")
             }
         }
 

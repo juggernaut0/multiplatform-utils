@@ -1,12 +1,14 @@
 package multiplatform
 
 import asynclite.await
+import kotlinx.browser.window
+import kotlinx.serialization.json.Json
 import multiplatform.api.ApiRoute
 import multiplatform.api.ApiRouteWithBody
-import kotlinx.serialization.json.Json
+import multiplatform.api.FetchClient
+import multiplatform.api.FetchHeaders
 import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
-import kotlinx.browser.window
 
 class FetchException(message: String, val status: Short, val body: String) : Exception(message)
 
@@ -21,18 +23,22 @@ suspend fun fetch(method: String, path: String, body: String? = undefined, heade
     return text
 }
 
+@Deprecated(
+    message = "Configure and use a client",
+    replaceWith = ReplaceWith("FetchClient(json).callApi<P, R>(this, params, FetchHeaders(headers))",
+        imports = ["multiplatform.api.FetchClient", "multiplatform.api.FetchHeaders"])
+)
 suspend fun <P, R> ApiRoute<P, R>.call(params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
-    return fetch(method.toString(), path.applyParams(params), headers = headers)
-            .let { json.decodeFromString(responseSer, it) }
+    return FetchClient(json).callApi(this, params, FetchHeaders(headers))
 }
 
+@Deprecated(
+    message = "Configure and use a client",
+    replaceWith = ReplaceWith("FetchClient(json).callApi<P, T, R>(this, params, body, FetchHeaders(headers))",
+        imports = ["multiplatform.api.FetchClient"])
+)
 suspend fun <P, T, R> ApiRouteWithBody<P, T, R>.call(body: T, params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
-    return fetch(
-        method.toString(),
-        path.applyParams(params),
-        body = json.encodeToString(requestSer, body),
-        headers = headers
-    ).let { json.decodeFromString(responseSer, it) }
+    return FetchClient(json).callApi(this, params, body, FetchHeaders(headers))
 }
 
 private val defaultJson: Json by lazy {

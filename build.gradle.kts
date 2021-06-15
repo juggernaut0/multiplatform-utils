@@ -1,18 +1,17 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.4.0"
+    kotlin("multiplatform") version "1.5.10"
     `maven-publish`
-    kotlin("plugin.serialization").version("1.4.0")
+    kotlin("plugin.serialization").version("1.5.10")
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.5.0-SNAPSHOT"
+    version = "0.6.3-time-support"
 
     repositories {
         mavenCentral()
-        maven { url = uri("https://kotlin.bintray.com/kotlinx") }
         maven { url = uri("https://juggernaut0.github.io/m2/repository") }
     }
 
@@ -40,7 +39,7 @@ kotlin {
         }
     }
 
-    val serializationVersion = "1.0.0-RC"
+    val serializationVersion = "1.2.1"
     sourceSets {
         all {
             languageSettings.apply {
@@ -50,7 +49,7 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serializationVersion")
                 api("org.jetbrains.kotlinx:kotlinx-datetime:0.1.0")
             }
@@ -64,7 +63,7 @@ kotlin {
 
         val jsMain by getting {
             dependencies {
-                api("com.github.juggernaut0:async-lite:0.1.0")
+                api("com.github.juggernaut0:async-lite:0.2.0")
             }
         }
 
