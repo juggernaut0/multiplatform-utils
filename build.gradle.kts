@@ -51,7 +51,7 @@ kotlin {
             dependencies {
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-properties:$serializationVersion")
-                api("org.jetbrains.kotlinx:kotlinx-datetime:0.1.0")
+                api("org.jetbrains.kotlinx:kotlinx-datetime:0.2.1")
             }
         }
 
