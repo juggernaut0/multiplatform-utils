@@ -1,6 +1,5 @@
 package multiplatform.graphql
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -72,22 +71,40 @@ class BuildQueryTest {
     }
 
     @Serializable
-    sealed class Foo {
+    class InlineFragments(val foo: Foo) {
         @Serializable
-        @SerialName("A")
-        class A(val a: Int): Foo()
-        @Serializable
-        @SerialName("B")
-        class B(val b: String): Foo()
+        sealed class Foo {
+            @Serializable
+            class A(val a: Int) : Foo()
+
+            @Serializable
+            class B(val b: String) : Foo()
+        }
     }
 
     @Test
     fun inlineFragments() {
-        @Serializable
-        class Query(val foo: Foo)
-
-        val query = GraphQLQueryBuilder.buildQuery(Query.serializer().descriptor)
+        val query = GraphQLQueryBuilder.buildQuery(InlineFragments.serializer().descriptor)
 
         assertEquals("{foo{type:__typename...on A{a}...on B{b}}}", query)
+    }
+
+    @Serializable
+    class EmptyCase(val foo: Foo) {
+        @Serializable
+        sealed class Foo {
+            @Serializable
+            class A(val a: Int) : Foo()
+
+            @Serializable
+            object B : Foo()
+        }
+    }
+
+    @Test
+    fun emptyCase() {
+        val query = GraphQLQueryBuilder.buildQuery(EmptyCase.serializer().descriptor)
+
+        assertEquals("{foo{type:__typename...on A{a}}}", query)
     }
 }

@@ -77,4 +77,46 @@ class RequestTest {
         assertEquals("test error", exc.errors[0].message)
         assertNotNull(exc.errors[0].path)
     }
+
+    @Serializable
+    class SerialDefaultTestQuery(val foo: Foo) {
+        @Serializable
+        sealed class Foo {
+            @Serializable
+            class A(val a: Int) : Foo()
+
+            @Serializable
+            @SerialDefault
+            object Unknown : Foo()
+        }
+    }
+
+    @Test
+    @Ignore
+    fun serialDefault() = async<Unit> {
+        val respJson = """
+            {
+                "data": { "foo": { "type": "B" } }
+            }
+        """.trimIndent()
+        val client = object : ApiClient {
+            override suspend fun <P, R> callApi(apiRoute: ApiRoute<P, R>, params: P, headers: Headers?): R {
+                fail("should not be called")
+            }
+
+            override suspend fun <P, T, R> callApi(
+                apiRoute: ApiRouteWithBody<P, T, R>,
+                params: P,
+                body: T,
+                headers: Headers?
+            ): R {
+                return Json.Default.decodeFromString(apiRoute.responseSer, respJson)
+            }
+        }
+        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/"), GraphQLResponse.serializer(), GraphQLRequest.serializer())
+
+        val resp = client.callGraphQL(route, SerialDefaultTestQuery.serializer())
+
+        assertEquals(SerialDefaultTestQuery.Foo.Unknown, resp.foo)
+    }
 }

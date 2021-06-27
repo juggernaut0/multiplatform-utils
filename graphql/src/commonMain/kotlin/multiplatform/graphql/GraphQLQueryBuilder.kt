@@ -60,7 +60,8 @@ internal object GraphQLQueryBuilder {
         append("type:__typename")
         for (i in 0 until base.elementsCount) {
             val subDesc = base.getElementDescriptor(i)
-            append("...on ${subDesc.serialName}")
+            if (subDesc.elementsCount == 0) continue
+            append("...on ${subDesc.serialName.split('.').last()}")
             outputClass(subDesc)
         }
         append('}')
