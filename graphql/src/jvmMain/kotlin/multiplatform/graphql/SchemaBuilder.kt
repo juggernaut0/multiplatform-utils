@@ -30,55 +30,16 @@ class SchemaBuilder {
      * kotlinx.serialization does not expose base class fields so you must specify them explicitly. The types will be
      * inferred from the subclasses. If no common fields are specified, they will be inferred from the subclasses.
      */
-    @OptIn(InternalSerializationApi::class)
     fun <T: Any> `interface`(ser: KSerializer<T>, vararg commonFields: String) {
-        val name = ser.descriptor.serialName.split('.').last()
-        require(ser is SealedClassSerializer<T>) { "$name must be a sealed class in order to create an interface" }
-        val baseDesc = ser.descriptor.getElementDescriptor(1)
-        require(baseDesc.elementsCount > 0) { "$name must have at least one implementation in order to create an interface" }
+        val (ifType, subtypes) = InterfaceBuilder(ser, commonFields.toList(), this).build()
+        addType(ifType)
+        subtypes.forEach { addType(it) }
+    }
 
-        val ifTypeBuilder = GraphQLInterfaceType.newInterface().name(name)
-
-        val ifFields = if (commonFields.isEmpty()) {
-            // infer common fields from subtypes
-            (0 until baseDesc.elementsCount)
-                .map { baseDesc.getElementDescriptor(it) }
-                .map { desc ->
-                    (0 until desc.elementsCount).map { i -> desc.getElementName(i) to desc.getElementDescriptor(i) }
-                }
-                .reduce { a, b -> a.filter { it in b } }
-        } else {
-            val desc = baseDesc.getElementDescriptor(0)
-            commonFields.map { fieldName ->
-                val i = desc.getElementIndex(fieldName)
-                    .takeIf { it >= 0 } ?: error("$fieldName is not a field in $name")
-                fieldName to desc.getElementDescriptor(i)
-            }
-        }
-        for ((fieldName, desc) in ifFields) {
-            val field = GraphQLFieldDefinition.newFieldDefinition().name(fieldName).type(desc.toGraphQLOutputType())
-            ifTypeBuilder.field(field)
-        }
-
-        val ifType = ifTypeBuilder.build()
-            .also { addType(it) }
-
-        val subtypes = mutableMapOf<SerialDescriptor, GraphQLObjectType>()
-        for (i in 0 until baseDesc.elementsCount) {
-            val elemDescriptor = baseDesc.getElementDescriptor(i)
-            FieldBuilder<T>(elemDescriptor, this)
-                .apply { builder.withInterface(ifType) }
-                .build()
-                .also { subtypes[elemDescriptor] = it }
-                .also { addType(it) }
-        }
-        val typeResolver = TypeResolver { env ->
-            val obj: T = env.getObject()
-            val actualSer = ser.findPolymorphicSerializerOrNull(NullEncoder, obj)
-                ?: error("Could not find actual serializer for $obj")
-            subtypes[actualSer.descriptor]
-        }
-        codeRegistry.typeResolver(ifType, typeResolver)
+    inline fun <T: Any> `interface`(ser: KSerializer<T>, vararg commonFields: String, subtypeBuilder: InterfaceBuilder<T>.() -> Unit) {
+        val (ifType, subtypes) = InterfaceBuilder(ser, commonFields.toList(), this).also(subtypeBuilder).build()
+        addType(ifType)
+        subtypes.forEach { addType(it) }
     }
 
     fun addType(objectType: GraphQLType) {
@@ -175,6 +136,78 @@ class FieldBuilder<T>(descriptor: SerialDescriptor, private val schemaBuilder: S
 
     fun build(): GraphQLObjectType {
         return builder.build()
+    }
+}
+
+@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+class InterfaceBuilder<T: Any>(ser: KSerializer<T>, commonFields: List<String>, private val schemaBuilder: SchemaBuilder) {
+    private val subtypeExtras: MutableMap<SerialDescriptor, FieldBuilder<*>.() -> Unit> = mutableMapOf()
+    private val builder = GraphQLInterfaceType.newInterface()
+    private val baseDesc: SerialDescriptor
+    private val ser: SealedClassSerializer<T>
+
+    init {
+        val name = ser.descriptor.serialName.split('.').last()
+        require(ser is SealedClassSerializer<T>) { "$name must be a sealed class in order to create an interface" }
+        this.ser = ser
+        baseDesc = ser.descriptor.getElementDescriptor(1)
+        require(baseDesc.elementsCount > 0) { "$name must have at least one implementation in order to create an interface" }
+
+        val ifTypeBuilder = builder.name(name)
+
+        val ifFields = if (commonFields.isEmpty()) {
+            // infer common fields from subtypes
+            (0 until baseDesc.elementsCount)
+                .map { baseDesc.getElementDescriptor(it) }
+                .map { desc ->
+                    (0 until desc.elementsCount).map { i -> desc.getElementName(i) to desc.getElementDescriptor(i) }
+                }
+                .reduce { a, b -> a.filter { it in b } }
+        } else {
+            val desc = baseDesc.getElementDescriptor(0)
+            commonFields.map { fieldName ->
+                val i = desc.getElementIndex(fieldName)
+                    .takeIf { it >= 0 } ?: error("$fieldName is not a field in $name")
+                fieldName to desc.getElementDescriptor(i)
+            }
+        }
+        for ((fieldName, desc) in ifFields) {
+            val field = GraphQLFieldDefinition.newFieldDefinition().name(fieldName).type(desc.toGraphQLOutputType())
+            ifTypeBuilder.field(field)
+        }
+
+
+    }
+
+    fun <U : T> subtype(ser: KSerializer<U>, fields: FieldBuilder<U>.() -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        subtypeExtras[ser.descriptor] = fields as FieldBuilder<*>.() -> Unit
+    }
+
+    fun build(): Pair<GraphQLInterfaceType, Collection<GraphQLObjectType>> {
+        val ifType = builder.build()
+        val subtypes = buildSubtypes(ifType)
+        val typeResolver = TypeResolver { env ->
+            val obj: T = env.getObject()
+            val actualSer = ser.findPolymorphicSerializerOrNull(NullEncoder, obj)
+                ?: error("Could not find actual serializer for $obj")
+            subtypes[actualSer.descriptor]
+        }
+        schemaBuilder.codeRegistry.typeResolver(ifType, typeResolver)
+        return Pair(ifType, subtypes.values)
+    }
+
+    private fun buildSubtypes(ifType: GraphQLInterfaceType): Map<SerialDescriptor, GraphQLObjectType> {
+        val subtypes = mutableMapOf<SerialDescriptor, GraphQLObjectType>()
+        for (i in 0 until baseDesc.elementsCount) {
+            val elemDescriptor = baseDesc.getElementDescriptor(i)
+            FieldBuilder<T>(elemDescriptor, schemaBuilder)
+                .apply { builder.withInterface(ifType) }
+                .apply { subtypeExtras[elemDescriptor]?.invoke(this) }
+                .build()
+                .also { subtypes[elemDescriptor] = it }
+        }
+        return subtypes
     }
 }
 

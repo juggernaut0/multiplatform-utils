@@ -42,7 +42,7 @@ kotlin {
     val serializationVersion = "1.2.1"
     sourceSets {
         all {
-            languageSettings.apply {
+            languageSettings {
                 useExperimentalAnnotation("kotlin.RequiresOptIn")
             }
         }

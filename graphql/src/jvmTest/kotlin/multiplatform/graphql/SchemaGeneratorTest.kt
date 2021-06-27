@@ -246,6 +246,36 @@ class SchemaGeneratorTest {
     }
 
     @Test
+    fun interfacesExtra() {
+        val schema = schema {
+            query {
+                field("foo", Foo.serializer()) {
+                    Foo.Bar("bar's foo", "bar")
+                }
+            }
+
+            `interface`(Foo.serializer()) {
+                subtype(Foo.Bar.serializer()) {
+                    field("barExtra", String.serializer()) {
+                        "$bar extra"
+                    }
+                }
+            }
+        }
+
+        printSchema(schema)
+
+        val response = runBlocking {
+            graphQL(schema).executeSuspend(GraphQLRequest("{foo{foo ... on Bar {barExtra}}}"))
+        }
+
+        response.errors.forEach { println(it) }
+
+        assertEquals("{\"foo\":{\"foo\":\"bar's foo\",\"barExtra\":\"bar extra\"}}", response.data.toString())
+        assertTrue(response.errors.isEmpty())
+    }
+
+    @Test
     @Ignore
     fun parallel() {
         val schema = schema {
