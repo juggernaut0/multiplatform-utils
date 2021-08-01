@@ -11,7 +11,7 @@ import multiplatform.api.ApiClient
 import multiplatform.api.ApiRouteWithBody
 
 @Serializable
-class GraphQLRequest(val query: String, val operationName: String? = null, val variables: Map<String, String> = emptyMap())
+class GraphQLRequest(val query: String, val operationName: String? = null, val variables: Map<String, String>? = null)
 
 // TODO path segments can be strings or ints
 @Serializable
@@ -40,10 +40,10 @@ suspend fun <R> ApiClient.callGraphQL(
     apiRoute: ApiRouteWithBody<Unit, GraphQLRequest, GraphQLResponse>,
     ser: KSerializer<R>,
     operationName: String? = null,
-    variables: Map<String, Any> = emptyMap()
+    variables: Map<String, Any>? = null
 ): R {
     val query = queryCache.get(ser.descriptor) { GraphQLQueryBuilder.buildQuery(it) }
-    val req = GraphQLRequest(query = query, operationName = operationName, variables = variables.mapValues { it.value.toString() })
+    val req = GraphQLRequest(query = query, operationName = operationName, variables = variables?.mapValues { it.value.toString() })
     val resp = callApi(apiRoute, Unit, req)
     if (resp.errors.isNotEmpty()) {
         throw GraphQLException(resp.errors)

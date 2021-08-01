@@ -21,7 +21,7 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLRespo
             ExecutionInput
                 .newExecutionInput(graphQLRequest.query)
                 .operationName(graphQLRequest.operationName)
-                .variables(graphQLRequest.variables)
+                .variables(graphQLRequest.variables ?: emptyMap())
                 .context(GraphQLCoroutineContext(this))
         ).await()
     }
