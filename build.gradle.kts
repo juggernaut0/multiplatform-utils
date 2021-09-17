@@ -8,7 +8,7 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.6.3-graphql-SNAPSHOT"
+    version = "0.7.0-graphql-SNAPSHOT"
 
     repositories {
         mavenCentral()
