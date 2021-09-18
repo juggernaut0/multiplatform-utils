@@ -9,11 +9,25 @@ import multiplatform.api.FetchClient
 import multiplatform.api.FetchHeaders
 import org.w3c.fetch.Headers
 import org.w3c.fetch.RequestInit
+import org.w3c.fetch.Response
+import kotlin.js.Promise
 
 class FetchException(message: String, val status: Short, val body: String) : Exception(message)
 
 suspend fun fetch(method: String, path: String, body: String? = undefined, headers: Headers? = undefined): String {
-    val resp = window.fetch(path, RequestInit(method = method, body = body, headers = headers)).await()
+    return fetch(window::fetch, method, path, body, headers)
+}
+internal typealias Fetcher = (dynamic, RequestInit) -> Promise<Response>
+internal suspend fun fetch(fetcher: Fetcher, method: String, path: String, body: String?, headers: Headers?): String {
+    val init = RequestInit(method = method)
+    // Setting these to undefined is fine, but can't set them to null
+    if (body != null) {
+        init.body = body
+    }
+    if (headers != null) {
+        init.headers = headers
+    }
+    val resp = fetcher(path, init).await()
     val text = resp.text().await()
     if (!resp.ok) throw FetchException(
         "${resp.status} ${resp.statusText}",
