@@ -1,12 +1,12 @@
 package multiplatform.ktor
 
-import io.ktor.application.install
-import io.ktor.features.StatusPages
-import io.ktor.http.HttpMethod
-import io.ktor.http.HttpStatusCode
-import io.ktor.routing.routing
-import io.ktor.server.testing.setBody
-import io.ktor.server.testing.withTestApplication
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.routing.*
+import io.ktor.server.testing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import multiplatform.api.ApiRoute
@@ -16,15 +16,14 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ServerTest {
-    // TODO move this back into test method once kxs supports local class serialization (kotlin 1.5.30)
-    @Serializable
-    data class Req(val x: String)
-
     @Test
     fun testServerExts() {
+        @Serializable
+        data class Req(val x: String)
+
         val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/test"), String.serializer(), Req.serializer())
 
-        withTestApplication({
+        testApplication {
             install(StatusPages) {
                 installWebApplicationExceptionHandler()
             }
@@ -33,39 +32,35 @@ class ServerTest {
                     it.x.uppercase()
                 }
             }
-        }) {
-            with(handleRequest {
-                method = HttpMethod.Post
-                uri = "/test"
+
+            with(client.post {
+                url("/test")
                 //language=JSON
                 setBody("""{"x": "test"}""")
-
             }) {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertEquals("\"TEST\"", response.content)
+                assertEquals(HttpStatusCode.OK, status)
+                assertEquals("\"TEST\"", bodyAsText())
             }
 
-            with(handleRequest {
-                method = HttpMethod.Post
-                uri = "/test"
+            with(client.post {
+                url("/test")
                 //language=JSON
                 setBody("""{"y": "test"}""")
 
             }) {
-                assertEquals(HttpStatusCode.BadRequest, response.status())
+                assertEquals(HttpStatusCode.BadRequest, status)
             }
         }
     }
 
-    // TODO move this back into test method once kxs supports local class serialization (kotlin 1.5.30)
-    @Serializable
-    data class Params(val path: String, val query: String)
-
     @Test
     fun params() {
+        @Serializable
+        data class Params(val path: String, val query: String)
+
         val route = ApiRoute(Method.GET, pathOf(Params.serializer(), "/{path}?q={query}"), String.serializer())
 
-        withTestApplication({
+        testApplication {
             install(StatusPages) {
                 installWebApplicationExceptionHandler()
             }
@@ -74,22 +69,20 @@ class ServerTest {
                     params.path + params.query
                 }
             }
-        }) {
-            with(handleRequest {
-                method = HttpMethod.Get
-                uri = "/test?q=foo"
 
+            with(client.get {
+                method = HttpMethod.Get
+                url("/test?q=foo")
             }) {
-                assertEquals(HttpStatusCode.OK, response.status())
-                assertEquals("\"testfoo\"", response.content)
+                assertEquals(HttpStatusCode.OK, status)
+                assertEquals("\"testfoo\"", bodyAsText())
             }
 
-            with(handleRequest {
+            with(client.get {
                 method = HttpMethod.Get
-                uri = "/test"
-
+                url("/test")
             }) {
-                assertEquals(HttpStatusCode.BadRequest, response.status())
+                assertEquals(HttpStatusCode.BadRequest, status)
             }
         }
     }

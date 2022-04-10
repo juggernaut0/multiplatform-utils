@@ -1,18 +1,18 @@
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
 plugins {
-    kotlin("multiplatform") version "1.5.10"
+    kotlin("multiplatform") version "1.6.20"
     `maven-publish`
-    kotlin("plugin.serialization").version("1.5.10")
+    kotlin("plugin.serialization") version "1.6.20"
 }
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.6.5"
+    version = "0.7.0"
 
     repositories {
         mavenCentral()
-        maven { url = uri("https://juggernaut0.github.io/m2/repository") }
+        maven("https://juggernaut0.github.io/m2/repository")
     }
 
     plugins.withId("maven-publish") {
@@ -39,11 +39,11 @@ kotlin {
         }
     }
 
-    val serializationVersion = "1.2.1"
+    val serializationVersion = "1.3.2"
     sourceSets {
         all {
             languageSettings.apply {
-                useExperimentalAnnotation("kotlin.RequiresOptIn")
+                optIn("kotlin.RequiresOptIn")
             }
         }
 
