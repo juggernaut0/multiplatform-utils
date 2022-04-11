@@ -16,37 +16,39 @@ kotlin {
         }
     }
 
-    val ktorVersion = "1.6.0"
+    val ktorVersion = "2.0.0"
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 api(project(":"))
                 api("io.ktor:ktor-client-core:$ktorVersion")
             }
         }
 
-        val jvmMain by getting {
+        named("jvmMain") {
             dependencies {
                 api("io.ktor:ktor-server-core:$ktorVersion")
-                api("io.ktor:ktor-auth:$ktorVersion")
+                api("io.ktor:ktor-server-auth:$ktorVersion")
+                compileOnly("io.ktor:ktor-server-status-pages:$ktorVersion")
             }
         }
 
-        val jvmTest by getting {
+        named("jvmTest") {
             dependencies {
                 implementation(kotlin("test-junit"))
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
                 implementation("io.ktor:ktor-client-mock:$ktorVersion")
+                implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
             }
         }
 
-        val jsMain by getting {
+        named("jsMain") {
             dependencies {
                 api("io.ktor:ktor-client-js:$ktorVersion")
             }
         }
 
-        val jsTest by getting {
+        named("jsTest") {
             dependencies {
                 implementation(kotlin("test-js"))
             }

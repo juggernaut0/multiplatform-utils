@@ -1,9 +1,8 @@
 package multiplatform.ktor
 
-import io.ktor.application.call
-import io.ktor.features.StatusPages
-import io.ktor.http.HttpStatusCode
-import io.ktor.response.respond
+import io.ktor.http.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.response.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,10 +18,10 @@ class BadRequestException(message: String? = null, cause: Throwable? = null)
 class UnauthorizedException(message: String? = null, cause: Throwable? = null)
     : WebApplicationException(HttpStatusCode.Unauthorized, message, cause)
 
-fun StatusPages.Configuration.installWebApplicationExceptionHandler(
+fun StatusPagesConfig.installWebApplicationExceptionHandler(
     logger: Logger = LoggerFactory.getLogger("ktor.application")
 ) {
-    exception<WebApplicationException> { e ->
+    exception<WebApplicationException> { call, e ->
         call.respond(e.status, e.message.orEmpty())
         if (e.status.value < 500) {
             logger.warn(e.status.toString(), e)

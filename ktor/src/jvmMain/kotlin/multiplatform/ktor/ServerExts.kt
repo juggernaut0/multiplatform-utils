@@ -1,22 +1,21 @@
 package multiplatform.ktor
 
-import io.ktor.application.*
-import io.ktor.auth.Principal
-import io.ktor.auth.authentication
-import io.ktor.http.ContentType
-import io.ktor.request.receiveText
-import io.ktor.response.respondText
-import io.ktor.routing.Route
-import io.ktor.routing.route
-import io.ktor.util.AttributeKey
-import io.ktor.util.pipeline.Pipeline
-import io.ktor.util.toMap
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.util.*
+import io.ktor.util.pipeline.*
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.Json
 import multiplatform.api.ApiRoute
 import multiplatform.api.ApiRouteWithBody
-import kotlinx.serialization.*
-import kotlinx.serialization.json.Json
 
-object JsonSerializationFeature : ApplicationFeature<Pipeline<*, ApplicationCall>, JsonSerialization.Config, JsonSerialization> {
+object JsonSerializationPlugin : BaseApplicationPlugin<Pipeline<*, ApplicationCall>, JsonSerialization.Config, JsonSerialization> {
     override val key: AttributeKey<JsonSerialization> = AttributeKey("JsonSerialization")
 
     override fun install(
@@ -45,7 +44,7 @@ class CallContext<P> internal constructor(val params: P, val auth: Principal?)
 fun <P, R> Route.handleApi(apiRoute: ApiRoute<P, R>, handler: suspend CallContext<P>.() -> R) {
     route(apiRoute.path.pathString(), apiRoute.method.toHttpMethod()) {
         handle {
-            val json = call.application.featureOrNull(JsonSerializationFeature)?.json ?: JsonSerialization.defaultJson
+            val json = call.application.pluginOrNull(JsonSerializationPlugin)?.json ?: JsonSerialization.defaultJson
             val params = try {
                 apiRoute.path.extractParams(call.parameters.toMap().mapValues { it.value.first() }, call.request.queryParameters.toMap())
             } catch (e: SerializationException) {
@@ -60,7 +59,7 @@ fun <P, R> Route.handleApi(apiRoute: ApiRoute<P, R>, handler: suspend CallContex
 fun <P, T : Any, R> Route.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, handler: suspend CallContext<P>.(T) -> R) {
     route(apiRoute.path.pathString(), apiRoute.method.toHttpMethod()) {
         handle {
-            val json = call.application.featureOrNull(JsonSerializationFeature)?.json ?: JsonSerialization.defaultJson
+            val json = call.application.pluginOrNull(JsonSerializationPlugin)?.json ?: JsonSerialization.defaultJson
             val params = try {
                 apiRoute.path.extractParams(call.parameters.toMap().mapValues { it.value.first() }, call.request.queryParameters.toMap())
             } catch (e: SerializationException) {
