@@ -5,12 +5,7 @@ plugins {
 }
 
 kotlin {
-    jvm {
-        // TODO required for tests that use local serializable classes, can remove in kxs 1.5.30
-        compilations.named("test") {
-            kotlinOptions.useOldBackend = true
-        }
-    }
+    jvm()
     js {
         browser {
             testTask {
@@ -24,7 +19,7 @@ kotlin {
     sourceSets {
         all {
             languageSettings.apply {
-                useExperimentalAnnotation("kotlin.RequiresOptIn")
+                optIn("kotlin.RequiresOptIn")
             }
         }
 
