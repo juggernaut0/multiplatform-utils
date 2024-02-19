@@ -50,7 +50,7 @@ fun <P, R> Route.handleApi(apiRoute: ApiRoute<P, R>, handler: suspend CallContex
             } catch (e: SerializationException) {
                 throw BadRequestException(cause = e)
             }
-            val resp = CallContext(params, call.authentication.principal).handler()
+            val resp = CallContext(params, call.principal()).handler()
             call.respondJson(json, apiRoute.responseSer, resp)
         }
     }
@@ -66,7 +66,7 @@ fun <P, T : Any, R> Route.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, handler
                 throw BadRequestException(cause = e)
             }
             val body = call.receiveJson(json, apiRoute.requestSer)
-            val resp = CallContext(params, call.authentication.principal).handler(body)
+            val resp = CallContext(params, call.principal()).handler(body)
             call.respondJson(json, apiRoute.responseSer, resp)
         }
     }

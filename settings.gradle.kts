@@ -7,6 +7,9 @@ pluginManagement {
 
 rootProject.name = "multiplatform-utils"
 
-include("ktor")
+include("javalin", "ktor")
 
+project(":javalin").name = "${rootProject.name}-javalin"
 project(":ktor").name = "${rootProject.name}-ktor"
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")

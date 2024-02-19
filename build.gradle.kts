@@ -1,5 +1,6 @@
 import dev.twarner.gradle.DownloadFirefoxTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("multiplatform") version "1.9.22"
@@ -10,7 +11,7 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.8.0"
+    version = "0.9.0"
 
     repositories {
         mavenCentral()
@@ -67,6 +68,7 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
+                implementation("io.mockk:mockk:1.13.9")
             }
         }
 
@@ -85,11 +87,19 @@ kotlin {
 }
 
 tasks {
-    withType<Kotlin2JsCompile> {
+    withType<Kotlin2JsCompile>().configureEach {
         kotlinOptions {
             moduleKind = "umd"
             sourceMap = true
             sourceMapEmbedSources = "always"
         }
+    }
+
+    withType<JavaCompile>().configureEach {
+        options.release = 17
+    }
+
+    withType<KotlinCompile>().configureEach {
+        kotlinOptions.jvmTarget = "17"
     }
 }
