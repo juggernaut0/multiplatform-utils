@@ -44,16 +44,3 @@ fun Headers.toMultiplatformHeaders(): multiplatform.api.Headers {
         }
     }
 }
-
-object JsonSerializationClientPlugin : HttpClientPlugin<JsonSerialization.Config, JsonSerialization> {
-    override val key: AttributeKey<JsonSerialization> = AttributeKey("JsonSerialization")
-
-    override fun install(plugin: JsonSerialization, scope: HttpClient) {
-        // empty
-    }
-
-    override fun prepare(block: JsonSerialization.Config.() -> Unit): JsonSerialization {
-        val config = JsonSerialization.Config().also(block)
-        return JsonSerialization(config.json ?: JsonSerialization.defaultJson)
-    }
-}
