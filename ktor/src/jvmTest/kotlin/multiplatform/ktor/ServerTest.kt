@@ -9,6 +9,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import multiplatform.api.ApiRoute
 import multiplatform.api.Method
 import multiplatform.api.pathOf
@@ -21,7 +22,8 @@ class ServerTest {
         @Serializable
         data class Req(val x: String)
 
-        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/test"), String.serializer(), Req.serializer())
+        val json = Json { isLenient = true }
+        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/test"), String.serializer(), Req.serializer(), json)
 
         testApplication {
             install(StatusPages) {
@@ -36,7 +38,7 @@ class ServerTest {
             with(client.post {
                 url("/test")
                 //language=JSON
-                setBody("""{"x": "test"}""")
+                setBody("""{x: "test"}""") // lenient json
             }) {
                 assertEquals(HttpStatusCode.OK, status)
                 assertEquals("\"TEST\"", bodyAsText())

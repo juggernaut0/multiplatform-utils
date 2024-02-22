@@ -6,6 +6,7 @@ import io.javalin.http.Context
 import io.javalin.testtools.JavalinTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import multiplatform.api.ApiRoute
 import multiplatform.api.Method
 import multiplatform.api.pathOf
@@ -23,7 +24,8 @@ class ServerTest {
         @Serializable
         data class Params(val path: String, val query: String)
 
-        val route = ApiRoute(Method.POST, pathOf(Params.serializer(), "/{path}?q={query}"), String.serializer(), Req.serializer())
+        val json = Json { isLenient = true }
+        val route = ApiRoute(Method.POST, pathOf(Params.serializer(), "/{path}?q={query}"), String.serializer(), Req.serializer(), json)
 
         val app = Javalin
             .create()
@@ -33,7 +35,7 @@ class ServerTest {
 
         JavalinTest.test(app) { _, client ->
             client.request("/test?q=1") {
-                it.post("""{"x": "req"}""".toRequestBody(ContentType.JSON.toMediaType()))
+                it.post("""{x: "req"}""".toRequestBody(ContentType.JSON.toMediaType()))
             }.run {
                 assertEquals(200, code)
                 assertEquals("\"REQtest1\"", body!!.string())
