@@ -39,24 +39,18 @@ internal suspend fun fetch(fetcher: Fetcher, method: String, path: String, body:
 
 @Deprecated(
     message = "Configure and use a client",
-    replaceWith = ReplaceWith("FetchClient(json).callApi<P, R>(this, params, FetchHeaders(headers))",
+    replaceWith = ReplaceWith("FetchClient().callApi<P, R>(this, params, FetchHeaders(headers))",
         imports = ["multiplatform.api.FetchClient", "multiplatform.api.FetchHeaders"])
 )
-suspend fun <P, R> ApiRoute<P, R>.call(params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
-    return FetchClient(json).callApi(this, params, FetchHeaders(headers))
+suspend fun <P, R> ApiRoute<P, R>.call(params: P, headers: Headers? = undefined): R {
+    return FetchClient().callApi(this, params, FetchHeaders(headers))
 }
 
 @Deprecated(
     message = "Configure and use a client",
-    replaceWith = ReplaceWith("FetchClient(json).callApi<P, T, R>(this, params, body, FetchHeaders(headers))",
-        imports = ["multiplatform.api.FetchClient"])
+    replaceWith = ReplaceWith("FetchClient().callApi<P, T, R>(this, params, body, FetchHeaders(headers))",
+        imports = ["multiplatform.api.FetchClient", "multiplatform.api.FetchHeaders"])
 )
-suspend fun <P, T, R> ApiRouteWithBody<P, T, R>.call(body: T, params: P, headers: Headers? = undefined, json: Json = defaultJson): R {
-    return FetchClient(json).callApi(this, params, body, FetchHeaders(headers))
-}
-
-private val defaultJson: Json by lazy {
-    Json {
-        ignoreUnknownKeys = true
-    }
+suspend fun <P, T, R> ApiRouteWithBody<P, T, R>.call(body: T, params: P, headers: Headers? = undefined): R {
+    return FetchClient().callApi(this, params, body, FetchHeaders(headers))
 }

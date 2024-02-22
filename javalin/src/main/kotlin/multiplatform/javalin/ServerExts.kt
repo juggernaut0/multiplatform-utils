@@ -1,9 +1,9 @@
 package multiplatform.javalin
 
-import io.javalin.Javalin
 import io.javalin.http.*
 import io.javalin.plugin.ContextPlugin
 import io.javalin.plugin.PluginNotRegisteredException
+import io.javalin.router.JavalinDefaultRoutingApi
 import io.javalin.security.RouteRole
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationException
@@ -15,25 +15,10 @@ import multiplatform.api.Method
 import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-class JsonExtension(userConfig: ((Config) -> Unit)? = null) : ContextPlugin<JsonExtension.Config, Json>(userConfig, Config()) {
-    override fun createExtension(context: Context): Json {
-        return pluginConfig.json
-    }
-
-    class Config {
-        var json = defaultJson
-    }
-
-    companion object {
-        val defaultJson = Json { ignoreUnknownKeys = true }
-    }
-}
-
 class CallContext<P> internal constructor(val params: P, val auth: AuthenticationPlugin.Principal?)
 
-fun <P, R> Javalin.handleApi(apiRoute: ApiRoute<P, R>, vararg routeRoles: RouteRole, handler: CallContext<P>.() -> R): Javalin {
+fun <TApi : JavalinDefaultRoutingApi<TApi>, P, R> TApi.handleApi(apiRoute: ApiRoute<P, R>, vararg routeRoles: RouteRole, handler: CallContext<P>.() -> R): TApi {
     return addHttpHandler(apiRoute.method.toHandlerType(), apiRoute.path.pathString(), { ctx ->
-        val json = ctx.maybeWith(JsonExtension::class) ?: JsonExtension.defaultJson
         val params = try {
             apiRoute.path.extractParams(ctx.pathParamMap(), ctx.queryParamMap())
         } catch (e: SerializationException) {
@@ -42,13 +27,12 @@ fun <P, R> Javalin.handleApi(apiRoute: ApiRoute<P, R>, vararg routeRoles: RouteR
         }
         val principal = ctx.maybeWith(AuthenticationPlugin::class)
         val resp = CallContext(params, principal).handler()
-        ctx.respondJson(json, apiRoute.responseSer, resp)
+        ctx.respondJson(apiRoute.json, apiRoute.responseSer, resp)
     }, *routeRoles)
 }
 
-fun <P, T, R> Javalin.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, vararg routeRoles: RouteRole, handler: CallContext<P>.(T) -> R): Javalin {
+fun <TApi : JavalinDefaultRoutingApi<TApi>, P, T, R> TApi.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, vararg routeRoles: RouteRole, handler: CallContext<P>.(T) -> R): TApi {
     return addHttpHandler(apiRoute.method.toHandlerType(), apiRoute.path.pathString(), { ctx ->
-        val json = ctx.maybeWith(JsonExtension::class) ?: JsonExtension.defaultJson
         val params = try {
             apiRoute.path.extractParams(ctx.pathParamMap(), ctx.queryParamMap())
         } catch (e: SerializationException) {
@@ -56,9 +40,9 @@ fun <P, T, R> Javalin.handleApi(apiRoute: ApiRouteWithBody<P, T, R>, vararg rout
             throw BadRequestResponse(e.message ?: HttpStatus.BAD_REQUEST.message)
         }
         val principal = ctx.maybeWith(AuthenticationPlugin::class)
-        val body = ctx.receiveJson(json, apiRoute.requestSer)
+        val body = ctx.receiveJson(apiRoute.json, apiRoute.requestSer)
         val resp = CallContext(params, principal).handler(body)
-        ctx.respondJson(json, apiRoute.responseSer, resp)
+        ctx.respondJson(apiRoute.json, apiRoute.responseSer, resp)
     }, *routeRoles)
 }
 

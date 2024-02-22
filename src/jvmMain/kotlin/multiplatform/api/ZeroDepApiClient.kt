@@ -10,7 +10,6 @@ import java.net.http.HttpResponse.BodyHandlers
 class ZeroDepApiClient(
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
     private val baseUrl: String = "",
-    private val json: Json = defaultJson,
 ) : BlockingApiClient {
 
     override fun <P, R> callApi(apiRoute: ApiRoute<P, R>, params: P, headers: Headers?): R {
@@ -26,12 +25,12 @@ class ZeroDepApiClient(
         if (resp.statusCode() > 299) {
             throw IllegalStateException("Received status code ${resp.statusCode()}: ${resp.body()}")
         }
-        return json.decodeFromString(apiRoute.responseSer, resp.body())
+        return apiRoute.json.decodeFromString(apiRoute.responseSer, resp.body())
     }
 
     override fun <P, T, R> callApi(apiRoute: ApiRouteWithBody<P, T, R>, params: P, body: T, headers: Headers?): R {
         val reqBuilder = HttpRequest.newBuilder(URI(baseUrl + apiRoute.path.applyParams(params)))
-            .method(apiRoute.method.name, BodyPublishers.ofString(json.encodeToString(apiRoute.requestSer, body)))
+            .method(apiRoute.method.name, BodyPublishers.ofString(apiRoute.json.encodeToString(apiRoute.requestSer, body)))
         if (headers != null) {
             for ((name, value) in headers) {
                 reqBuilder.header(name, value)
@@ -42,10 +41,6 @@ class ZeroDepApiClient(
         if (resp.statusCode() > 299) {
             throw IllegalStateException("Received status code ${resp.statusCode()}: ${resp.body()}")
         }
-        return json.decodeFromString(apiRoute.responseSer, resp.body())
-    }
-
-    companion object {
-        private val defaultJson = Json { ignoreUnknownKeys = true }
+        return apiRoute.json.decodeFromString(apiRoute.responseSer, resp.body())
     }
 }

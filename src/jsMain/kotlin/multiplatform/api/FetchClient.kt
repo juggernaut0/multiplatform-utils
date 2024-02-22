@@ -1,9 +1,8 @@
 package multiplatform.api
 
-import kotlinx.serialization.json.Json
 import multiplatform.fetch
 
-class FetchClient(private val json: Json = defaultJson) : ApiClient {
+class FetchClient : ApiClient {
     override suspend fun <P, R> callApi(
         apiRoute: ApiRoute<P, R>,
         params: P,
@@ -13,7 +12,7 @@ class FetchClient(private val json: Json = defaultJson) : ApiClient {
             apiRoute.method.toString(),
             apiRoute.path.applyParams(params),
             headers = headers?.toJsHeaders(),
-        ).let { json.decodeFromString(apiRoute.responseSer, it) }
+        ).let { apiRoute.json.decodeFromString(apiRoute.responseSer, it) }
     }
 
     override suspend fun <P, T, R> callApi(
@@ -25,17 +24,9 @@ class FetchClient(private val json: Json = defaultJson) : ApiClient {
         return fetch(
             apiRoute.method.toString(),
             apiRoute.path.applyParams(params),
-            body = json.encodeToString(apiRoute.requestSer, body),
+            body = apiRoute.json.encodeToString(apiRoute.requestSer, body),
             headers = headers?.toJsHeaders(),
-        ).let { json.decodeFromString(apiRoute.responseSer, it) }
-    }
-
-    companion object {
-        private val defaultJson: Json by lazy {
-            Json {
-                ignoreUnknownKeys = true
-            }
-        }
+        ).let { apiRoute.json.decodeFromString(apiRoute.responseSer, it) }
     }
 
     private fun Headers.toJsHeaders(): org.w3c.fetch.Headers {

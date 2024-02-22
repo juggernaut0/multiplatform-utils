@@ -10,19 +10,9 @@ import multiplatform.api.ApiRoute
 import multiplatform.api.ApiRouteWithBody
 import multiplatform.api.Headers
 
-class KtorApiClient(httpClient: HttpClient = HttpClient(), json: Json? = null) : ApiClient {
-    private val httpClient = httpClient.let {
-        if (it.pluginOrNull(JsonSerializationClientPlugin) == null) {
-            it.config {
-                install(JsonSerializationClientPlugin) { this.json = json }
-            }
-        } else {
-            it
-        }
-    }
-
+class KtorApiClient(private val httpClient: HttpClient = HttpClient()) : ApiClient {
     override suspend fun <P, R> callApi(apiRoute: ApiRoute<P, R>, params: P, headers: Headers?): R {
-        val json = httpClient.plugin(JsonSerializationClientPlugin).json
+        val json = apiRoute.json
         val resp = httpClient.request(apiRoute.path.applyParams(params)) {
             method = apiRoute.method.toHttpMethod()
             headers?.forEach { (name, value) -> this.headers.append(name, value) }
@@ -36,7 +26,7 @@ class KtorApiClient(httpClient: HttpClient = HttpClient(), json: Json? = null) :
         body: T,
         headers: Headers?
     ): R {
-        val json = httpClient.plugin(JsonSerializationClientPlugin).json
+        val json = apiRoute.json
         val resp = httpClient.request(apiRoute.path.applyParams(params)) {
             method = apiRoute.method.toHttpMethod()
             setBody(json.encodeToString(apiRoute.requestSer, body))

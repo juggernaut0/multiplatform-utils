@@ -11,7 +11,6 @@ plugins {
 
 allprojects {
     group = "com.github.juggernaut0"
-    version = "0.9.0"
 
     repositories {
         mavenCentral()
@@ -39,9 +38,15 @@ kotlin {
     js(IR) {
         browser {
             testTask {
-                dependsOn(downloadFirefox)
-                doFirst {
-                    environment("FIREFOX_BIN", downloadFirefox.flatMap { it.outputBin }.get().asFile.absolutePath)
+                if (System.getProperty("os.name").contains("Mac")) {
+                    doFirst {
+                        environment("FIREFOX_BIN", "/Applications/Firefox.app/Contents/MacOS/firefox")
+                    }
+                } else {
+                    dependsOn(downloadFirefox)
+                    doFirst {
+                        environment("FIREFOX_BIN", downloadFirefox.flatMap { it.outputBin }.get().asFile.absolutePath)
+                    }
                 }
                 useKarma {
                     useFirefoxHeadless()
