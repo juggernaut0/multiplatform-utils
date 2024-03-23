@@ -2,21 +2,42 @@ package multiplatform.api
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.properties.Properties
 
-class ApiRoute<P, R>(val method: Method, val path: PathTemplate<P>, val responseSer: KSerializer<R>) {
+val safeJson = Json { ignoreUnknownKeys = true }
+
+class ApiRoute<P, R>(
+    val method: Method,
+    val path: PathTemplate<P>,
+    val responseSer: KSerializer<R>,
+    val json: Json = safeJson,
+) {
     companion object {
-        operator fun <P, T, R> invoke(method: Method, path: PathTemplate<P>, responseSer: KSerializer<R>, requestSer: KSerializer<T>) : ApiRouteWithBody<P, T, R> {
+        operator fun <P, T, R> invoke(
+            method: Method,
+            path: PathTemplate<P>,
+            responseSer: KSerializer<R>,
+            requestSer: KSerializer<T>,
+            json: Json = safeJson,
+        ) : ApiRouteWithBody<P, T, R> {
             return ApiRouteWithBody(
                 method,
                 path,
                 responseSer,
-                requestSer
+                requestSer,
+                json,
             )
         }
     }
 }
-class ApiRouteWithBody<P, T, R>(val method: Method, val path: PathTemplate<P>, val responseSer: KSerializer<R>, val requestSer: KSerializer<T>)
+class ApiRouteWithBody<P, T, R>(
+    val method: Method,
+    val path: PathTemplate<P>,
+    val responseSer: KSerializer<R>,
+    val requestSer: KSerializer<T>,
+    val json: Json = safeJson,
+)
 
 enum class Method { GET, POST, PUT, DELETE }
 
@@ -111,6 +132,7 @@ internal sealed class Segment {
     abstract fun apply(params: Map<String, Any?>): String?
 
     companion object {
+        @Suppress("RegExpRedundantEscape") // it lies, the escape is required
         private val paramMatcher = Regex("\\{(\\w+)\\}")
         fun of(str: String): Segment {
             val match = paramMatcher.matchEntire(str)

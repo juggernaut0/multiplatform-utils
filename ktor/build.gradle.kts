@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     jvm()
-    js {
+    js(IR) {
         browser {
             testTask {
                 useKarma {
@@ -16,7 +16,7 @@ kotlin {
         }
     }
 
-    val ktorVersion = "2.0.0"
+    val ktorVersion = "2.3.8"
     sourceSets {
         commonMain {
             dependencies {

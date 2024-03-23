@@ -1,6 +1,0 @@
-rootProject.name = 'multiplatform-utils'
-
-include('graphql', 'ktor')
-
-project(':ktor').name = "${rootProject.name}-ktor"
-project(':graphql').name = "${rootProject.name}-graphql"
