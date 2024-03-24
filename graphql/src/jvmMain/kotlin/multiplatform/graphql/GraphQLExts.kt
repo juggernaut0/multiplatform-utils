@@ -1,6 +1,7 @@
 package multiplatform.graphql
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
 import graphql.schema.DataFetchingEnvironment
@@ -12,8 +13,18 @@ import kotlinx.serialization.json.*
 
 fun graphQL(schema: GraphQLSchema): GraphQL = GraphQL.newGraphQL(schema).queryExecutionStrategy(AsyncExecutionStrategy()).build()
 
-class GraphQLCoroutineContext(val coroutineScope: CoroutineScope)
-val DataFetchingEnvironment.coroutineScope: CoroutineScope get() = getContext<GraphQLCoroutineContext>().coroutineScope
+object CoroutineScopeContextKey
+val DataFetchingEnvironment.coroutineScope: CoroutineScope get() = graphQlContext.get(CoroutineScopeContextKey)
+
+fun GraphQL.execute(graphQLRequest: GraphQLRequest): GraphQLResponse {
+    val result = execute(
+        ExecutionInput
+            .newExecutionInput(graphQLRequest.query)
+            .operationName(graphQLRequest.operationName)
+            .variables(graphQLRequest.variablesFromJson())
+    )
+    return completeExecution(result)
+}
 
 suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLResponse {
     val result = coroutineScope {
@@ -21,10 +32,14 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLRespo
             ExecutionInput
                 .newExecutionInput(graphQLRequest.query)
                 .operationName(graphQLRequest.operationName)
-                .variables(graphQLRequest.variables ?: emptyMap())
-                .context(GraphQLCoroutineContext(this))
+                .variables(graphQLRequest.variablesFromJson())
+                .graphQLContext { it.put(CoroutineScopeContextKey, this) }
         ).await()
     }
+    return completeExecution(result)
+}
+
+private fun completeExecution(result: ExecutionResult): GraphQLResponse {
     val data = result.getData<Any?>()?.let { toJson(it) }
     val errors = result.errors.map { error ->
         GraphQLError(
@@ -36,15 +51,15 @@ suspend fun GraphQL.executeSuspend(graphQLRequest: GraphQLRequest): GraphQLRespo
     return GraphQLResponse(data = data, errors = errors)
 }
 
-@Suppress("UNCHECKED_CAST")
-private fun toJson(e: Any?): JsonElement {
-    return when (e) {
-        null -> JsonNull
-        is Number -> JsonPrimitive(e)
-        is Boolean -> JsonPrimitive(e)
-        is String -> JsonPrimitive(e)
-        is Map<*, *> -> JsonObject((e as Map<String, *>).mapValues { toJson(it.value) })
-        is List<*> -> JsonArray(e.map { toJson(it) })
-        else -> error("Cannot convert $e to JsonElement")
+private fun GraphQLRequest.variablesFromJson(): Map<String, Any?> {
+    val variables = variables ?: return emptyMap()
+    return variables.mapValues { it.value.toObject() }
+}
+
+private fun JsonElement.toObject(): Any? {
+    return when (this) {
+        is JsonArray -> map { it.toObject() }
+        is JsonObject -> mapValues { it.value.toObject() }
+        is JsonPrimitive -> contentOrNull
     }
 }

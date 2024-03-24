@@ -4,6 +4,8 @@ import asynclite.async
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
 import multiplatform.api.*
 import kotlin.test.*
 
@@ -29,12 +31,12 @@ class RequestTest {
                 return Json.Default.decodeFromString(apiRoute.responseSer, respJson)
             }
         }
-        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/"), GraphQLResponse.serializer(), GraphQLRequest.serializer())
+        val route = GraphQLApiRoute(pathOf(Unit.serializer(), "/"))
 
         @Serializable
         class Query(val greeting: String, val number: Int)
 
-        val resp = client.callGraphQL(route, Query.serializer())
+        val resp = client.callGraphQL(route, GraphQLQuery("{greeting number}", Query.serializer()))
 
         assertEquals("hello", resp.greeting)
         assertEquals(3, resp.number)
@@ -66,13 +68,9 @@ class RequestTest {
                 return Json.Default.decodeFromString(apiRoute.responseSer, respJson)
             }
         }
-        val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/"), GraphQLResponse.serializer(), GraphQLRequest.serializer())
+        val route = GraphQLApiRoute(pathOf(Unit.serializer(), "/"))
 
-        @Serializable
-        class Query(val greeting: String, val number: Int)
-
-        val exc = assertFails { client.callGraphQL(route, Query.serializer()) }
-        exc as GraphQLException
+        val exc = assertFailsWith<GraphQLException> { client.callGraphQL(route, GraphQLQuery("", Unit.serializer())) }
         assertEquals(1, exc.errors.size)
         assertEquals("test error", exc.errors[0].message)
         assertNotNull(exc.errors[0].path)
@@ -86,13 +84,11 @@ class RequestTest {
             class A(val a: Int) : Foo()
 
             @Serializable
-            @SerialDefault
             object Unknown : Foo()
         }
     }
 
     @Test
-    @Ignore
     fun serialDefault() = async<Unit> {
         val respJson = """
             {
@@ -115,7 +111,10 @@ class RequestTest {
         }
         val route = ApiRoute(Method.POST, pathOf(Unit.serializer(), "/"), GraphQLResponse.serializer(), GraphQLRequest.serializer())
 
-        val resp = client.callGraphQL(route, SerialDefaultTestQuery.serializer())
+        val module = SerializersModule {
+            polymorphicDefaultDeserializer(SerialDefaultTestQuery.Foo::class) { SerialDefaultTestQuery.Foo.Unknown.serializer() }
+        }
+        val resp = client.callGraphQL(route, GraphQLQuery("", SerialDefaultTestQuery.serializer(), serializersModule = module))
 
         assertEquals(SerialDefaultTestQuery.Foo.Unknown, resp.foo)
     }

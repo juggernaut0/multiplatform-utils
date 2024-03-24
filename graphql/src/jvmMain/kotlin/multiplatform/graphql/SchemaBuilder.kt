@@ -216,7 +216,7 @@ private fun GraphQLFieldDefinition.Builder.argumentsFromDescriptor(descriptor: S
     for (i in 0 until descriptor.elementsCount) {
         val paramName = descriptor.getElementName(i)
         val paramDesc = descriptor.getElementDescriptor(i)
-        val argument = graphql.schema.GraphQLArgument.newArgument()
+        val argument = GraphQLArgument.newArgument()
             .name(paramName)
             .type(paramDesc.toGraphQLInputType())
         argument(argument)
@@ -227,17 +227,13 @@ private fun GraphQLFieldDefinition.Builder.argumentsFromDescriptor(descriptor: S
 private fun SerialDescriptor.toGraphQLType(): GraphQLType {
     val baseType = when (val kind = kind) {
         is PrimitiveKind -> {
-            @Suppress("DEPRECATION") // KotlinJS code can understand the nonstandard scalars. Replace when they move
             when (kind) {
                 PrimitiveKind.BOOLEAN -> Scalars.GraphQLBoolean
-                PrimitiveKind.BYTE -> Scalars.GraphQLByte
-                PrimitiveKind.CHAR -> Scalars.GraphQLChar
-                PrimitiveKind.SHORT -> Scalars.GraphQLShort
                 PrimitiveKind.INT -> Scalars.GraphQLInt
-                PrimitiveKind.LONG -> Scalars.GraphQLLong
                 PrimitiveKind.FLOAT -> Scalars.GraphQLFloat
                 PrimitiveKind.DOUBLE -> Scalars.GraphQLFloat
                 PrimitiveKind.STRING -> Scalars.GraphQLString
+                else -> throw IllegalArgumentException("Unsupported primitive kind $kind in graphql schema")
             }
         }
         is StructureKind.LIST -> {
@@ -248,7 +244,7 @@ private fun SerialDescriptor.toGraphQLType(): GraphQLType {
             GraphQLTypeReference(serialName.split('.').last().trimEnd('?'))
         }
     }
-    return baseType.let { if (isNullable || it is GraphQLNonNull) it else GraphQLNonNull(it) }
+    return if (isNullable) baseType else GraphQLNonNull(baseType)
 }
 
 // TODO figure out where these break

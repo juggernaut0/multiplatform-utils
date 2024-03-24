@@ -2,13 +2,24 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
     `maven-publish`
+    id("dev.twarner.download-firefox")
 }
 
 kotlin {
     jvm()
-    js {
+    js(IR) {
         browser {
             testTask {
+                if (System.getProperty("os.name").contains("Mac")) {
+                    doFirst {
+                        environment("FIREFOX_BIN", "/Applications/Firefox.app/Contents/MacOS/firefox")
+                    }
+                } else {
+                    dependsOn(tasks.downloadFirefox)
+                    doFirst {
+                        environment("FIREFOX_BIN", tasks.downloadFirefox.flatMap { it.outputBin }.get().asFile.absolutePath)
+                    }
+                }
                 useKarma {
                     useFirefoxHeadless()
                 }
@@ -31,25 +42,21 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
-                api("com.graphql-java:graphql-java:2020-12-21T21-14-06-a12f84b")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.5.0")
+                api("com.graphql-java:graphql-java:21.4")
+                compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             }
         }
 
         val jvmTest by getting {
             dependencies {
-                implementation(kotlin("test-junit"))
-            }
-        }
-
-        val jsMain by getting {
-            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             }
         }
 
         val jsTest by getting {
             dependencies {
-                implementation(kotlin("test-js"))
+                implementation(kotlin("test"))
             }
         }
     }

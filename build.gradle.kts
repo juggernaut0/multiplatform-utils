@@ -1,4 +1,3 @@
-import dev.twarner.gradle.DownloadFirefoxTask
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -6,7 +5,7 @@ plugins {
     kotlin("multiplatform") version "1.9.22"
     `maven-publish`
     kotlin("plugin.serialization") version "1.9.22"
-    id("dev.twarner.download-firefox") version "0.3.6"
+    id("dev.twarner.download-firefox") version "1.0.4"
 }
 
 allprojects {
@@ -29,10 +28,6 @@ allprojects {
     }
 }
 
-val downloadFirefox = tasks.named("downloadFirefox", DownloadFirefoxTask::class) {
-    version.set("122.0.1")
-}
-
 kotlin {
     jvm()
     js(IR) {
@@ -43,9 +38,9 @@ kotlin {
                         environment("FIREFOX_BIN", "/Applications/Firefox.app/Contents/MacOS/firefox")
                     }
                 } else {
-                    dependsOn(downloadFirefox)
+                    dependsOn(tasks.downloadFirefox)
                     doFirst {
-                        environment("FIREFOX_BIN", downloadFirefox.flatMap { it.outputBin }.get().asFile.absolutePath)
+                        environment("FIREFOX_BIN", tasks.downloadFirefox.flatMap { it.outputBin }.get().asFile.absolutePath)
                     }
                 }
                 useKarma {

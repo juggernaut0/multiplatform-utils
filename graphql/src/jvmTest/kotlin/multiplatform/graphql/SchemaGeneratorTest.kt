@@ -10,6 +10,7 @@ import kotlinx.serialization.Transient
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.JsonPrimitive
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.test.Ignore
@@ -205,11 +206,11 @@ class SchemaGeneratorTest {
         printSchema(schema)
 
         val response = runBlocking {
-            graphQL(schema).executeSuspend(GraphQLRequest("query(\$x:Int!){a(x:\$x)}", variables = mapOf("x" to "2")))
+            graphQL(schema).executeSuspend(GraphQLRequest("query(\$x:Int!){a(x:\$x)}", variables = mapOf("x" to JsonPrimitive(2))))
         }
 
+        assertEquals(emptyList(), response.errors)
         assertEquals("{\"a\":4}", response.data.toString())
-        assertTrue(response.errors.isEmpty())
     }
 
     @Serializable
